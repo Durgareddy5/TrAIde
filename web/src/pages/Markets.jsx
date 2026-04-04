@@ -1,0 +1,494 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  TrendingUp, TrendingDown, Activity, RefreshCw,
+  Search, ArrowUpRight, ArrowDownRight, BarChart3,
+  Flame, ChevronRight, Globe, Zap,
+} from 'lucide-react';
+import {
+  AreaChart, Area, ResponsiveContainer, Tooltip,
+} from 'recharts';
+import { formatINR, formatPercent, getPnLColor } from '@/utils/formatters';
+import Skeleton from '@/components/ui/Skeleton';
+import Badge from '@/components/ui/Badge';
+
+/* ─── Mock Data ───────────────────────────────── */
+const INDICES = [
+  { symbol:'NIFTY_50',    name:'NIFTY 50',           value:23519.35, change:142.65,  pct: 0.61, open:23410.00, high:23562.80, low:23387.45, vol:'—',       exchange:'NSE' },
+  { symbol:'SENSEX',      name:'S&P BSE SENSEX',      value:77341.08, change:498.24,  pct: 0.65, open:76980.00, high:77489.50, low:76845.20, vol:'—',       exchange:'BSE' },
+  { symbol:'BANK_NIFTY',  name:'NIFTY Bank',          value:50892.45, change:-187.30, pct:-0.37, open:51100.00, high:51238.90, low:50724.60, vol:'—',       exchange:'NSE' },
+  { symbol:'NIFTY_IT',    name:'NIFTY IT',            value:37284.90, change:312.50,  pct: 0.84, open:37010.00, high:37390.20, low:36980.50, vol:'—',       exchange:'NSE' },
+  { symbol:'NIFTY_PHARMA',name:'NIFTY Pharma',        value:18942.30, change: 88.70,  pct: 0.47, open:18880.00, high:18985.60, low:18820.40, vol:'—',       exchange:'NSE' },
+  { symbol:'NIFTY_AUTO',  name:'NIFTY Auto',          value:21876.55, change:-145.20, pct:-0.66, open:22010.00, high:22098.30, low:21820.70, vol:'—',       exchange:'NSE' },
+  { symbol:'NIFTY_FMCG',  name:'NIFTY FMCG',         value:54328.40, change:234.80,  pct: 0.43, open:54120.00, high:54480.90, low:54010.30, vol:'—',       exchange:'NSE' },
+  { symbol:'NIFTY_METAL', name:'NIFTY Metal',         value:8934.60,  change:-98.40,  pct:-1.09, open:9040.00, high:9055.20,  low:8890.30,  vol:'—',       exchange:'NSE' },
+  { symbol:'NIFTY_REALTY',name:'NIFTY Realty',        value:1042.75,  change: 18.35,  pct: 1.79, open:1025.00, high:1048.90,  low:1021.60,  vol:'—',       exchange:'NSE' },
+  { symbol:'INDIA_VIX',   name:'India VIX',           value:13.42,    change: -0.58,  pct:-4.14, open:14.02,   high:14.18,    low:13.38,    vol:'—',       exchange:'NSE' },
+  { symbol:'NIFTY_PSU_BANK',name:'NIFTY PSU Bank',   value:6218.35,  change: 72.40,  pct: 1.18, open:6150.00, high:6245.80,  low:6138.20,  vol:'—',       exchange:'NSE' },
+  { symbol:'NIFTY_MIDCAP_50',name:'NIFTY Midcap 50', value:15842.60, change:188.90,  pct: 1.21, open:15680.00,high:15889.40, low:15650.30, vol:'—',       exchange:'NSE' },
+];
+
+const GAINERS = [
+  { symbol:'RELIANCE',  name:'Reliance Industries',   price:1285.50, change:12.35,  pct:0.97,  vol:'45.2L'  },
+  { symbol:'SUNPHARMA', name:'Sun Pharmaceutical',    price:1812.30, change:24.50,  pct:1.37,  vol:'18.6L'  },
+  { symbol:'BHARTIARTL',name:'Bharti Airtel',         price:1628.75, change:22.30,  pct:1.39,  vol:'22.4L'  },
+  { symbol:'NESTLEIND', name:'Nestle India',          price:2486.30, change:47.80,  pct:1.96,  vol:'3.8L'   },
+  { symbol:'APOLLOHOSP',name:'Apollo Hospitals',      price:6842.50, change:156.40, pct:2.34,  vol:'8.1L'   },
+  { symbol:'NIFTY_REALTY',name:'NIFTY Realty',        price:1042.75, change:18.35,  pct:1.79,  vol:'—'      },
+];
+
+const LOSERS = [
+  { symbol:'TATAMOTORS',name:'Tata Motors',           price:738.90,  change:-12.55, pct:-1.67, vol:'88.4L'  },
+  { symbol:'WIPRO',     name:'Wipro Ltd',             price:472.65,  change:-3.10,  pct:-0.65, vol:'38.2L'  },
+  { symbol:'NIFTY_METAL',name:'NIFTY Metal',          price:8934.60, change:-98.40, pct:-1.09, vol:'—'      },
+  { symbol:'HDFCLIFE',  name:'HDFC Life Insurance',   price:628.45,  change:-8.90,  pct:-1.40, vol:'15.6L'  },
+  { symbol:'NIFTY_AUTO',name:'NIFTY Auto',            price:21876.55,change:-145.20,pct:-0.66, vol:'—'      },
+  { symbol:'JSWSTEEL',  name:'JSW Steel',             price:924.30,  change:-18.60, pct:-1.97, vol:'24.8L'  },
+];
+
+const ACTIVE = [
+  { symbol:'SBIN',     name:'State Bank of India',   price:812.40,  change:6.85,   pct:0.85,  vol:'1.2Cr' },
+  { symbol:'TATAMOTORS',name:'Tata Motors',          price:738.90,  change:-12.55, pct:-1.67, vol:'88.4L' },
+  { symbol:'RELIANCE', name:'Reliance Industries',   price:1285.50, change:12.35,  pct:0.97,  vol:'45.2L' },
+  { symbol:'ICICIBANK',name:'ICICI Bank',            price:1289.45, change:-5.20,  pct:-0.40, vol:'42.6L' },
+  { symbol:'HDFCBANK', name:'HDFC Bank',             price:1672.30, change:15.60,  pct:0.94,  vol:'38.9L' },
+  { symbol:'ITC',      name:'ITC Ltd',              price:442.85,  change:3.70,   pct:0.84,  vol:'1.1Cr' },
+];
+
+/* mini spark line */
+const generateSpark = (up) =>
+  Array.from({ length: 12 }, (_, i) => ({
+    v: 100 + (up ? i * 2 : -i * 2) + (Math.random() * 8 - 4),
+  }));
+
+/* ─── Index Card ─────────────────────────────── */
+const IndexCard = ({ idx, onClick }) => {
+  const up    = idx.pct >= 0;
+  const spark = generateSpark(up);
+
+  return (
+    <motion.div
+      whileHover={{ y: -3, transition: { duration: 0.2 } }}
+      onClick={onClick}
+      className="bg-[var(--bg-card)] border border-[var(--border-primary)]
+                 rounded-2xl p-4 cursor-pointer hover:border-[var(--border-secondary)]
+                 transition-all duration-300 overflow-hidden relative group"
+    >
+      {/* subtle top gradient line */}
+      <div className={`absolute top-0 left-0 right-0 h-[2px]
+                       ${up ? 'bg-[var(--profit)]' : 'bg-[var(--loss)]'}
+                       opacity-0 group-hover:opacity-100 transition-opacity`} />
+
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <p className="text-xs text-[var(--text-tertiary)] mb-0.5 font-mono
+                        uppercase tracking-wider">
+            {idx.exchange}
+          </p>
+          <p className="text-sm font-heading font-semibold
+                        text-[var(--text-primary)] leading-tight">
+            {idx.name}
+          </p>
+        </div>
+        <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-lg
+                          text-xs font-mono font-semibold
+                          ${up
+                            ? 'bg-[var(--profit-bg)] text-[var(--profit)]'
+                            : 'bg-[var(--loss-bg)] text-[var(--loss)]'}`}>
+          {up ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>}
+          {formatPercent(idx.pct)}
+        </span>
+      </div>
+
+      <p className="text-xl font-mono font-bold text-[var(--text-primary)] mb-1">
+        {idx.value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+      </p>
+      <p className={`text-xs font-mono ${getPnLColor(idx.change)}`}>
+        {idx.change >= 0 ? '+' : ''}{idx.change.toFixed(2)}
+      </p>
+
+      {/* Spark line */}
+      <div className="mt-3 h-12">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={spark} margin={{ top:2, right:0, left:0, bottom:0 }}>
+            <defs>
+              <linearGradient id={`sg-${idx.symbol}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"
+                  stopColor={up ? 'var(--profit)' : 'var(--loss)'}
+                  stopOpacity={0.3}/>
+                <stop offset="100%"
+                  stopColor={up ? 'var(--profit)' : 'var(--loss)'}
+                  stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <Area type="monotone" dataKey="v"
+              stroke={up ? 'var(--profit)' : 'var(--loss)'}
+              strokeWidth={1.5}
+              fill={`url(#sg-${idx.symbol})`}
+              dot={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* OHLC row */}
+      <div className="grid grid-cols-3 gap-2 mt-3 pt-3
+                      border-t border-[var(--border-primary)]">
+        {[
+          { label: 'O', value: idx.open },
+          { label: 'H', value: idx.high },
+          { label: 'L', value: idx.low  },
+        ].map((item) => (
+          <div key={item.label}>
+            <p className="text-[9px] text-[var(--text-tertiary)] uppercase
+                          tracking-wider">{item.label}</p>
+            <p className="text-xs font-mono text-[var(--text-primary)]">
+              {item.value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+/* ─── Mover Row ──────────────────────────────── */
+const MoverRow = ({ stock, rank, onClick }) => {
+  const up = stock.pct >= 0;
+  return (
+    <motion.tr
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: rank * 0.05 }}
+      onClick={onClick}
+      className="border-b border-[var(--border-primary)] cursor-pointer
+                 hover:bg-[var(--bg-card-hover)] transition-colors duration-150"
+    >
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-md bg-[var(--accent-primary)]/10
+                          flex items-center justify-center text-xs font-bold
+                          text-[var(--accent-primary)]">
+            {stock.symbol[0]}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
+              {stock.symbol}
+            </p>
+            <p className="text-xs text-[var(--text-tertiary)] truncate max-w-[120px]">
+              {stock.name}
+            </p>
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-right font-mono text-sm
+                     text-[var(--text-primary)]">
+        {typeof stock.price === 'number'
+          ? stock.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })
+          : stock.price}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <p className={`text-sm font-mono font-semibold ${getPnLColor(stock.pct)}`}>
+          {up ? '+' : ''}{stock.pct.toFixed(2)}%
+        </p>
+        <p className={`text-xs font-mono ${getPnLColor(stock.change)}`}>
+          {up ? '+' : ''}{typeof stock.change === 'number'
+            ? stock.change.toFixed(2) : stock.change}
+        </p>
+      </td>
+      <td className="px-4 py-3 text-right text-xs font-mono
+                     text-[var(--text-tertiary)]">
+        {stock.vol}
+      </td>
+    </motion.tr>
+  );
+};
+
+/* ─── Heatmap Cell ───────────────────────────── */
+const HeatmapCell = ({ symbol, pct, sector, size = 1, onClick }) => {
+  const getColor = (p) => {
+    if (p >  3) return 'bg-green-600  text-white';
+    if (p >  1) return 'bg-green-500/80 text-white';
+    if (p >  0) return 'bg-green-400/60 text-white';
+    if (p > -1) return 'bg-red-400/60 text-white';
+    if (p > -3) return 'bg-red-500/80 text-white';
+    return 'bg-red-700 text-white';
+  };
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.05, zIndex: 10 }}
+      onClick={onClick}
+      className={`rounded-lg flex flex-col items-center justify-center
+                  cursor-pointer transition-all duration-200 select-none
+                  ${getColor(pct)} ${size === 2
+                    ? 'col-span-2 row-span-2 min-h-[80px]'
+                    : 'min-h-[52px]'}`}
+    >
+      <p className="text-xs font-bold font-mono">{symbol}</p>
+      <p className="text-[10px] font-mono opacity-90">
+        {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
+      </p>
+    </motion.div>
+  );
+};
+
+/* ══════════════════════════════════════════════
+   MAIN MARKETS PAGE
+══════════════════════════════════════════════ */
+const Markets = () => {
+  const navigate             = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('indices');
+  const [search, setSearch]  = useState('');
+
+  useEffect(() => {
+    setTimeout(() => setLoading(false), 600);
+  }, []);
+
+  const marketOpen = (() => {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes();
+    const day = now.getDay();
+    if (day === 0 || day === 6) return false;
+    const mins = h * 60 + m;
+    return mins >= 555 && mins <= 930; // 9:15 – 15:30
+  })();
+
+  /* heatmap data (NIFTY 50 sample) */
+  const heatmapData = [
+    { symbol:'RELIANCE', pct:0.97,  size:2 },
+    { symbol:'TCS',      pct:-0.79, size:2 },
+    { symbol:'HDFCBANK', pct:0.94,  size:2 },
+    { symbol:'INFY',     pct:0.56 },
+    { symbol:'ICICIBANK',pct:-0.40  },
+    { symbol:'HINDUNILVR',pct:0.32 },
+    { symbol:'ITC',      pct:0.84  },
+    { symbol:'SBIN',     pct:0.85  },
+    { symbol:'BHARTIARTL',pct:1.39 },
+    { symbol:'KOTAKBANK',pct:-0.28 },
+    { symbol:'LT',       pct:-1.26 },
+    { symbol:'HCLTECH',  pct:0.63  },
+    { symbol:'AXISBANK', pct:0.47  },
+    { symbol:'ASIANPAINT',pct:-0.55},
+    { symbol:'MARUTI',   pct:0.82  },
+    { symbol:'SUNPHARMA',pct:1.37  },
+    { symbol:'TITAN',    pct:0.48  },
+    { symbol:'BAJFINANCE',pct:-0.92},
+    { symbol:'DMART',    pct:0.35  },
+    { symbol:'WIPRO',    pct:-0.65 },
+    { symbol:'ONGC',     pct:1.12  },
+    { symbol:'NTPC',     pct:0.74  },
+    { symbol:'TATAMOTORS',pct:-1.67},
+    { symbol:'JSWSTEEL', pct:-1.97 },
+  ];
+
+  const SECTIONS = [
+    { key:'indices',  label:'Indices',      icon:BarChart3  },
+    { key:'gainers',  label:'Top Gainers',  icon:TrendingUp  },
+    { key:'losers',   label:'Top Losers',   icon:TrendingDown},
+    { key:'active',   label:'Most Active',  icon:Flame       },
+    { key:'heatmap',  label:'Heat Map',     icon:Activity    },
+  ];
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── Header ──────────────────────────── */}
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-[var(--text-primary)]">
+            Markets
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
+            Real-time NSE &amp; BSE market overview
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Live / Closed badge */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg
+                           border text-xs font-semibold
+                           ${marketOpen
+                             ? 'bg-[var(--profit-bg)] border-[var(--profit-border)] text-[var(--profit)]'
+                             : 'bg-[var(--bg-tertiary)] border-[var(--border-primary)] text-[var(--text-tertiary)]'}`}>
+            <span className={`w-2 h-2 rounded-full
+                              ${marketOpen ? 'bg-[var(--profit)] animate-pulse' : 'bg-[var(--text-tertiary)]'}`} />
+            {marketOpen ? 'Market Open' : 'Market Closed'}
+          </div>
+
+          <button
+            onClick={() => { setLoading(true); setTimeout(() => setLoading(false), 600); }}
+            className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)]
+                       text-[var(--text-secondary)] hover:text-[var(--text-primary)]
+                       hover:border-[var(--border-secondary)] transition-all duration-200"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Section Tabs ─────────────────────── */}
+      <div className="flex items-center gap-1 overflow-x-auto scrollbar-none
+                      bg-[var(--bg-card)] border border-[var(--border-primary)]
+                      rounded-2xl p-1.5">
+        {SECTIONS.map((sec) => (
+          <button
+            key={sec.key}
+            onClick={() => setActiveSection(sec.key)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl
+                         text-sm font-medium whitespace-nowrap transition-all duration-200
+                         ${activeSection === sec.key
+                           ? 'bg-[var(--accent-primary)] text-white shadow-[0_0_15px_rgba(0,82,255,0.3)]'
+                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'}`}
+          >
+            <sec.icon size={16}/>
+            {sec.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Indices Grid ─────────────────────── */}
+      {activeSection === 'indices' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+                        xl:grid-cols-4 gap-4">
+          {loading
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-52 rounded-2xl"/>
+              ))
+            : INDICES.map((idx) => (
+                <IndexCard
+                  key={idx.symbol}
+                  idx={idx}
+                  onClick={() => navigate(`/stock/${idx.symbol}`)}
+                />
+              ))
+          }
+        </div>
+      )}
+
+      {/* ── Gainers / Losers / Active tables ─── */}
+      {['gainers','losers','active'].includes(activeSection) && (
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)]
+                        rounded-2xl overflow-hidden">
+          {/* Search bar */}
+          <div className="flex items-center gap-3 px-5 py-4
+                          border-b border-[var(--border-primary)]">
+            <h2 className="text-sm font-heading font-semibold
+                           text-[var(--text-primary)] flex items-center gap-2">
+              {activeSection === 'gainers' && <><TrendingUp  size={18} className="text-[var(--profit)]"/> Top Gainers</>}
+              {activeSection === 'losers'  && <><TrendingDown size={18} className="text-[var(--loss)]" /> Top Losers</>}
+              {activeSection === 'active'  && <><Flame       size={18} className="text-amber-400"     /> Most Active</>}
+            </h2>
+            <div className="ml-auto relative">
+              <Search size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2
+                           text-[var(--text-tertiary)]"/>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filter..."
+                className="pl-8 pr-3 py-1.5 rounded-lg text-xs
+                           bg-[var(--bg-input)] border border-[var(--border-primary)]
+                           text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]
+                           focus:outline-none focus:border-[var(--accent-primary)] w-36"
+              />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-[var(--bg-secondary)]
+                               border-b border-[var(--border-primary)]">
+                  {['Stock','LTP','Change','Volume'].map((h) => (
+                    <th key={h}
+                        className={`px-4 py-3 text-[10px] font-bold uppercase
+                                   tracking-[0.08em] text-[var(--text-tertiary)]
+                                   ${h !== 'Stock' ? 'text-right' : 'text-left'}`}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading
+                  ? Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={i}
+                          className="border-b border-[var(--border-primary)]">
+                        {[...Array(4)].map((__, j) => (
+                          <td key={j} className="px-4 py-3">
+                            <Skeleton className="h-4 w-20"/>
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  : (activeSection === 'gainers' ? GAINERS
+                    : activeSection === 'losers'  ? LOSERS
+                    : ACTIVE)
+                    .filter((s) => search
+                      ? s.symbol.toLowerCase().includes(search.toLowerCase())
+                      : true)
+                    .map((s, i) => (
+                      <MoverRow
+                        key={s.symbol} stock={s} rank={i}
+                        onClick={() => navigate(`/stock/${s.symbol}`)}
+                      />
+                    ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Heat Map ─────────────────────────── */}
+      {activeSection === 'heatmap' && (
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)]
+                        rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-heading font-semibold
+                             text-[var(--text-primary)]">
+                NIFTY 50 Heat Map
+              </h2>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                Colour intensity = magnitude of price change
+              </p>
+            </div>
+            {/* Legend */}
+            <div className="hidden sm:flex items-center gap-1 text-[10px]
+                            text-[var(--text-tertiary)]">
+              <div className="flex gap-0.5">
+                {['bg-red-700','bg-red-500/70','bg-red-400/50',
+                  'bg-green-400/50','bg-green-500/70','bg-green-600'].map((c) => (
+                  <div key={c} className={`w-6 h-4 rounded-sm ${c}`}/>
+                ))}
+              </div>
+              <span className="ml-1">Low → High</span>
+            </div>
+          </div>
+
+          {loading ? (
+            <Skeleton className="h-64 w-full rounded-xl"/>
+          ) : (
+            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10
+                            gap-1.5 auto-rows-[52px]">
+              {heatmapData.map((cell) => (
+                <HeatmapCell
+                  key={cell.symbol}
+                  symbol={cell.symbol}
+                  pct={cell.pct}
+                  size={cell.size || 1}
+                  onClick={() => navigate(`/stock/${cell.symbol}`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Markets;
