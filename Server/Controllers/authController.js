@@ -43,11 +43,24 @@ const logActivity = async (userId, action, description, meta = {}, req = null) =
 ════════════════════════════════════════════ */
 const register = async (req, res) => {
   try {
-    const {
-      first_name, last_name, email, password,
+    let {
+      first_name, last_name, email, password, confirm_password,
       phone, organization_name, organization_type,
       designation, pan_number, employee_id,
     } = req.body;
+
+    // ✅ Normalize
+    email = email.toLowerCase();
+    pan_number = pan_number?.toUpperCase();
+
+    // ✅ Validation
+    if (!first_name || !last_name || !email || !password) {
+      return ApiResponse.badRequest(res, 'Required fields missing');
+    }
+
+    if (password !== confirm_password) {
+      return ApiResponse.badRequest(res, 'Passwords do not match');
+    }
 
     const existing = await User.findOne({ where: { email } });
     if (existing) {
@@ -55,13 +68,13 @@ const register = async (req, res) => {
     }
 
     const user = await User.create({
-      first_name, last_name, email,
-      password,
+      first_name, last_name, email, password,
       phone, organization_name, organization_type,
       designation, pan_number, employee_id,
       last_login_at: new Date(),
       last_login_ip: req.ip,
     });
+
 
     const fund = await Fund.create({
       user_id: user.id,

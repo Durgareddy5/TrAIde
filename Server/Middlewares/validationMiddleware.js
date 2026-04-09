@@ -23,12 +23,12 @@ const validateRegister = [
   body('first_name')
     .trim()
     .notEmpty().withMessage('First name required')
-    .isLength({ min: 2, max: 50 }).withMessage('2-50 chars'),
+    .isLength({ min: 2, max: 50 }),
 
   body('last_name')
     .trim()
     .notEmpty().withMessage('Last name required')
-    .isLength({ min: 2, max: 50 }).withMessage('2-50 chars'),
+    .isLength({ min: 2, max: 50 }),
 
   body('email')
     .trim()
@@ -38,53 +38,36 @@ const validateRegister = [
 
   body('password')
     .notEmpty().withMessage('Password required')
-    .isLength({ min: 8 }).withMessage('Min 8 chars')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/)
-    .withMessage('Must include upper, lower, number & special char'),
+    .isLength({ min: 8 })
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/),
+
+  // ✅ NEW
+  body('confirm_password')
+    .notEmpty().withMessage('Confirm password required')
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    }),
 
   body('phone')
     .optional()
-    .matches(/^[+]?[0-9]{10,15}$/)
-    .withMessage('Invalid phone number'),
+    .customSanitizer((val) => val.replace(/\s+/g, ''))
+    .matches(/^[+]?[0-9]{10,15}$/),
 
   body('pan_number')
     .optional()
-    .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)
-    .withMessage('Invalid PAN (e.g. ABCDE1234F)'),
+    .toUpperCase()
+    .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/),
 
-  body('organization_name')
-    .optional()
-    .trim()
-    .isLength({ max: 150 })
-    .withMessage('Max 150 characters'),
-
-  body('organization_type')
-    .optional()
-    .isIn([
-      'private_limited',
-      'public_limited',
-      'llp',
-      'partnership',
-      'proprietorship',
-      'huf',
-      'trust',
-      'other'
-    ])
-    .withMessage('Invalid organization type'),
-
-  body('designation')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('Max 100 characters'),
-
-  body('employee_id')
-    .optional()
-    .trim()
-    .isLength({ max: 50 })
-    .withMessage('Max 50 characters'),
-
-  // ❗ Do NOT validate confirm_password (frontend only)
+  body('organization_name').optional().trim().isLength({ max: 150 }),
+  body('organization_type').optional().isIn([
+    'private_limited','public_limited','llp','partnership',
+    'proprietorship','huf','trust','other'
+  ]),
+  body('designation').optional().trim().isLength({ max: 100 }),
+  body('employee_id').optional().trim().isLength({ max: 50 }),
 
   handleValidationErrors,
 ];

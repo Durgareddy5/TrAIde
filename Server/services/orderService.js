@@ -99,10 +99,12 @@ const placeOrder = async (userId, orderData) => {
     // 6. Determine initial status
     // Market orders on open market → execute immediately
     // Limit/SL orders → open (pending execution)
-    const marketOpen  = isMarketOpen();
-    const initStatus  = (order_type === 'market' && marketOpen)
-      ? ORDER_STATUSES.FILLED
-      : ORDER_STATUSES.OPEN;
+    const initStatus =
+    process.env.NODE_ENV === 'development'
+    ? ORDER_STATUSES.FILLED
+    : (order_type === 'market' && isMarketOpen()
+        ? ORDER_STATUSES.FILLED
+        : ORDER_STATUSES.OPEN);
 
     // 7. Create order record
     const order = await Order.create({

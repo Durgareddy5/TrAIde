@@ -6,12 +6,14 @@ import {
   ArrowLeft, Star, StarOff, TrendingUp, TrendingDown,
   Activity, BarChart3, Info, BookOpen, Newspaper,
   Plus, Minus, ChevronDown, Loader2, AlertCircle,
+  ArrowUpRight, ArrowDownRight   // ✅ ADD THIS
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { formatINR, formatPercent, formatVolume, getPnLColor } from '@/utils/formatters';
 import Badge   from '@/components/ui/Badge';
 import Skeleton from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
+import tradingService from '@/services/tradingService';
 
 /* ─── Mock stock data map ─────────────────────── */
 const STOCK_MAP = {
@@ -78,12 +80,12 @@ const CandlestickChart = ({ stock, interval }) => {
 
     /* Candlestick series */
     const candle = chart.addCandlestickSeries({
-      upColor:         'var(--profit)',
-      downColor:       'var(--loss)',
-      borderUpColor:   'var(--profit)',
-      borderDownColor: 'var(--loss)',
-      wickUpColor:     'var(--profit)',
-      wickDownColor:   'var(--loss)',
+          upColor:         '#00E676',   // green
+          downColor:       '#FF1744',   // red
+          borderUpColor:   '#00E676',
+          borderDownColor: '#FF1744',
+          wickUpColor:     '#00E676',
+          wickDownColor:   '#FF1744',
     });
 
     /* Volume series */
@@ -152,15 +154,59 @@ const OrderForm = ({ stock }) => {
   const charges  = +(estValue * 0.0003).toFixed(2); // rough calc
 
   const onSubmit = async (data) => {
+  try {
     setSub(true);
-    await new Promise((r) => setTimeout(r, 1200));
+
+    const payload = {
+      symbol: stock.symbol,
+      exchange: 'NSE',
+
+      // ✅ FIXED CASE
+      transaction_type: side.toLowerCase(),   // BUY / SELL
+      order_type: oType.toLowerCase(),        // market / limit
+
+      product_type: pType,                    // CNC / MIS
+
+      // ✅ ENSURE NUMBERS
+      quantity: Number(data.quantity),
+
+      // ✅ FIX PRICE ISSUE
+      price: oType === 'market'
+        ? stock.price   // NOT null ❗
+        : Number(data.price),
+
+      ...(data.trigger_price && {
+      trigger_price: Number(data.trigger_price),
+      }),
+    };
+
+    console.log("PAYLOAD:", payload); // debug
+
+    const res = await tradingService.placeOrder(payload);
+
     toast.success(
-      `${side.toUpperCase()} order placed: ${data.quantity} × ${stock.symbol} @ ${
-        oType === 'market' ? 'Market' : formatINR(data.price)
-      }`
+      `Order placed successfully (${res.data?.data?.status || 'processed'})`
     );
+
+    // ✅ OPTIONAL RESET
+    setValue('quantity', 1);
+    setValue('price', stock.price);
+    setValue('trigger_price', '');
+
+  } catch (err) {
+    console.log("FULL ERROR:", err);
+
+    if (err?.response?.data?.errors) {
+      err.response.data.errors.forEach((e) => {
+        console.log(`❌ ${e.path}: ${e.msg}`);
+      });
+    }
+
+    toast.error(err?.response?.data?.message || 'Order failed');
+  } finally {
     setSub(false);
-  };
+  }
+};
 
   return (
     <div className="bg-[var(--bg-card)] border border-[var(--border-primary)]

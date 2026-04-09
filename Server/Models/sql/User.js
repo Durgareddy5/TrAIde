@@ -212,6 +212,20 @@ User.prototype.isLocked = function () {
   return false;
 };
 
+// Instance method - Check if password changed after JWT issued
+User.prototype.changedPasswordAfter = function (JWTTimestamp) {
+  if (this.password_changed_at) {
+    const changedTimestamp = parseInt(
+      this.password_changed_at.getTime() / 1000,
+      10
+    );
+
+    return JWTTimestamp < changedTimestamp;
+  }
+
+  return false;
+};
+
 // Instance method - Get safe user object (no password)
 User.prototype.toSafeObject = function () {
   const values = this.toJSON();

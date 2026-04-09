@@ -68,7 +68,7 @@ const Register = () => {
     setLoading(true);
     try {
       const res = await authService.register(data);
-      if (res.data.success) {
+      if (res.success) {
         setAuth(res.data.user, res.data.access_token);
         toast.success('Welcome to ProTrade! Your ₹1 Crore account is ready.');
         navigate('/dashboard');

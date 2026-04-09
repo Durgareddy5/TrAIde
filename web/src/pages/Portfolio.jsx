@@ -1,3 +1,4 @@
+import tradingService from '@/services/tradingService';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -155,8 +156,61 @@ const Portfolio = () => {
   const [sortBy,   setSortBy]   = useState('value_desc');
 
   useEffect(() => {
-    setTimeout(() => { setHoldings(MOCK_HOLDINGS); setLoading(false); }, 700);
-  }, []);
+  fetchHoldings();
+}, []);
+
+const fetchHoldings = async () => {
+  try {
+    setLoading(true);
+    
+    const res = await tradingService.getHoldings();
+
+    const data = res.data?.data || [];
+
+    // 🔥 Transform backend → frontend format
+    const formatted = (data || []).map((h) => {
+  const qty = Number(h.quantity || 0);
+  const avg = Number(h.average_price || 0);
+  const ltp = Number(h.current_price ?? avg);
+  
+  const invested = qty * avg;
+  const current  = qty * ltp;
+  const pnl      = current - invested;
+  const pnlPct   = invested > 0 ? (pnl / invested) * 100 : 0;
+
+  return {
+    symbol: (h.symbol || '').toUpperCase(),
+    name: h.symbol || 'Unknown',
+
+    // 🔥 FIX: fallback exchange
+    exchange: h.exchange || 'NSE',
+
+    sector: h.sector || 'Other',
+
+    qty,
+    avg_price: avg,
+    current_price: ltp,
+
+    total_invested: invested,
+    current_value: current,
+
+    pnl,
+    pnl_pct: pnlPct,
+
+    day_change: 0,
+    day_change_pct: 0,
+  };
+   });
+    console.log("RAW API:", data);
+    console.log("FORMATTED:", formatted);
+    setHoldings(formatted);
+
+  } catch (err) {
+    console.error("Holdings fetch error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   /* summary */
   const totalInvested    = holdings.reduce((s, h) => s + h.total_invested, 0);
@@ -206,8 +260,7 @@ const Portfolio = () => {
           </p>
         </div>
         <button
-          onClick={() => { setLoading(true);
-            setTimeout(() => { setHoldings(MOCK_HOLDINGS); setLoading(false); }, 700); }}
+          onClick={fetchHoldings}
           className="flex items-center gap-2 px-4 py-2 rounded-xl
                      bg-[var(--bg-card)] border border-[var(--border-primary)]
                      text-sm text-[var(--text-secondary)]
@@ -394,18 +447,19 @@ const Portfolio = () => {
                 </tr>
               </thead>
               <tbody>
-                {loading
-                  ? Array.from({ length: 6 }).map((_, i) => (
-                      <tr key={i}
-                          className="border-b border-[var(--border-primary)]">
-                        {[...Array(8)].map((__, j) => (
-                          <td key={j} className="px-5 py-4">
-                            <Skeleton className="h-4 w-20" />
-                          </td>
-                        ))}
-                      </tr>
-                    ))
-                  : display.map((h, i) => (
+              {loading
+                ? Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={i}
+                        className="border-b border-[var(--border-primary)]">
+                      {[...Array(8)].map((__, j) => (
+                        <td key={j} className="px-5 py-4">
+                          <Skeleton className="h-4 w-20" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                : display.length > 0 ? (
+                    display.map((h, i) => (
                       <HoldingRow
                         key={h.symbol}
                         h={h}
@@ -413,8 +467,15 @@ const Portfolio = () => {
                         onClick={() => navigate(`/stock/${h.symbol}`)}
                       />
                     ))
-                }
-              </tbody>
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="text-center py-10 text-[var(--text-tertiary)]">
+                        No holdings found
+                      </td>
+                    </tr>
+                  )
+              }
+            </tbody>
             </table>
           </div>
         </motion.div>
