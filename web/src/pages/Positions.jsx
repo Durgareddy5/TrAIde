@@ -4,12 +4,13 @@ import { motion } from 'framer-motion';
 import {
   Activity, TrendingUp, TrendingDown, RefreshCw,
   Clock, AlertTriangle, ArrowUpRight, ArrowDownRight,
-  Square,
+  Square,BarChart3
 } from 'lucide-react';
 import { formatINR, formatPercent, getPnLColor } from '@/utils/formatters';
 import Skeleton from '@/components/ui/Skeleton';
 import Badge from '@/components/ui/Badge';
 import toast from 'react-hot-toast';
+import tradingService from '@/services/tradingService';
 
 const MOCK_POSITIONS = [
   { id:'p1', symbol:'RELIANCE',  name:'Reliance Industries', exchange:'NSE',
@@ -134,8 +135,62 @@ const Positions = () => {
   const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
-    setTimeout(() => { setPositions(MOCK_POSITIONS); setLoading(false); }, 600);
+  fetchPositions();
   }, []);
+
+  const fetchPositions = async () => {
+  try {
+    setLoading(true);
+
+    const res = await tradingService.getPositions();
+
+    console.log("POSITIONS RESPONSE:", res);
+
+    const data = res.data || [];
+
+    console.log("POSITIONS DATA:", data);
+
+    // 🔥 Transform backend → frontend
+    const formatted = data.map((p) => {
+      return {
+        id: p.id,
+        symbol: p.symbol,
+        name: p.symbol,
+        exchange: p.exchange || 'NSE',
+
+        product_type: p.product_type,
+        position_type: p.net_quantity > 0 ? 'long' : 'short',
+
+        buy_qty: p.buy_quantity || 0,
+        sell_qty: p.sell_quantity || 0,
+        net_qty: p.net_quantity || 0,
+
+        buy_avg: Number(p.buy_average_price || 0),
+        sell_avg: Number(p.sell_average_price || 0),
+
+        current_price: Number(p.current_price || 0),
+
+        buy_value: Number(p.buy_value || 0),
+        sell_value: Number(p.sell_value || 0),
+
+        unrealized_pnl: Number(p.unrealized_pnl || 0),
+        realized_pnl: Number(p.realized_pnl || 0),
+        total_pnl: Number(p.total_pnl || 0),
+
+        opened_at: p.opened_at,
+      };
+    });
+
+    console.log("FORMATTED POSITIONS:", formatted);
+
+    setPositions(formatted);
+
+  } catch (err) {
+    console.error("Positions fetch error:", err);
+  } finally {
+    setLoading(false);
+  }
+  };
 
   const totalPnL     = positions.reduce((s, p) => s + p.total_pnl, 0);
   const totalBuyVal  = positions.reduce((s, p) => s + p.buy_value, 0);
@@ -181,8 +236,7 @@ const Positions = () => {
             </motion.button>
           )}
           <button
-            onClick={() => { setLoading(true);
-              setTimeout(() => { setPositions(MOCK_POSITIONS); setLoading(false); }, 600); }}
+            onClick={fetchPositions}
             className="p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)]
                        text-[var(--text-secondary)] hover:text-[var(--text-primary)]
                        hover:border-[var(--border-secondary)] transition-all"

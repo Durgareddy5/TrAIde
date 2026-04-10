@@ -5,8 +5,8 @@
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import env from '../config/environment.js';
-import { User, Fund, FundTransaction } from '../models/sql/index.js';
-import { ActivityLog } from '../models/nosql/index.js';
+import { User, Fund, FundTransaction } from '../Models/sql/index.js';
+import { ActivityLog } from '../Models/nosql/index.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import logger from '../utils/logger.js';
 
@@ -129,13 +129,34 @@ const register = async (req, res) => {
 ════════════════════════════════════════════ */
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+
+    console.log("RAW BODY:", req.body);
+
+    // Normalize
+    email = email?.toLowerCase().trim();
+
+    console.log("NORMALIZED EMAIL:", email);
 
     const user = await User.findOne({ where: { email } });
-    if (!user) return ApiResponse.unauthorized(res, 'Invalid credentials.');
+
+    console.log("USER FROM DB:", user ? user.email : null);
+    console.log("STORED HASH:", user?.password);
+
+    if (!user) {
+      console.log("❌ USER NOT FOUND");
+      return ApiResponse.unauthorized(res, 'Invalid credentials.');
+    }
 
     const valid = await user.comparePassword(password);
-    if (!valid) return ApiResponse.unauthorized(res, 'Invalid password.');
+
+    console.log("PASSWORD ENTERED:", password);
+    console.log("PASSWORD MATCH:", valid);
+
+    if (!valid) {
+      console.log("❌ PASSWORD MISMATCH");
+      return ApiResponse.unauthorized(res, 'Invalid password.');
+    }
 
     const access_token = signAccessToken(user.id, user.role);
     const refresh_token = signRefreshToken(user.id);
@@ -143,8 +164,6 @@ const login = async (req, res) => {
     await user.update({ refresh_token });
 
     const fund = await Fund.findOne({ where: { user_id: user.id } });
-
-    await logActivity(user.id, 'login', 'User logged in', {}, req);
 
     return ApiResponse.success(res, {
       message: 'Login successful',
@@ -156,7 +175,7 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Login error:', error.message);
+    console.log("🔥 LOGIN ERROR:", error);
     return ApiResponse.serverError(res);
   }
 };

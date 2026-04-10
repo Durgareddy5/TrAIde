@@ -165,7 +165,11 @@ const fetchHoldings = async () => {
     
     const res = await tradingService.getHoldings();
 
-    const data = res.data?.data || [];
+    console.log("FULL RESPONSE:", res);       // 🔥 VERY IMPORTANT
+    console.log("DATA FIELD:", res.data);     // 🔥 THIS IS YOUR HOLDINGS
+
+
+    const data = res.data || [];
 
     // 🔥 Transform backend → frontend format
     const formatted = (data || []).map((h) => {

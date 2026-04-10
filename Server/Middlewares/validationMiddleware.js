@@ -8,6 +8,7 @@ import ApiResponse from '../utils/ApiResponse.js';
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+  console.log("VALIDATION ERRORS:", errors.array()); // 🔥 DEBUG
     const formatted = errors.array().map((e) => ({
       field:   e.path,
       message: e.msg,
@@ -73,8 +74,16 @@ const validateRegister = [
 ];
 
 const validateLogin = [
-  body('email').trim().notEmpty().withMessage('Email required').isEmail(),
-  body('password').notEmpty().withMessage('Password required'),
+  body('email')
+    .trim()
+    .notEmpty().withMessage('Email required')
+    .isEmail().withMessage('Invalid email')
+    .normalizeEmail(), // 🔥 FIX
+
+  body('password')
+    .trim()
+    .notEmpty().withMessage('Password required'),
+
   handleValidationErrors,
 ];
 

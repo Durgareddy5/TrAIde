@@ -175,7 +175,6 @@ const User = sequelize.define('users', {
   underscored: true,
   tableName: 'users',
   indexes: [
-    { fields: ['email'], unique: true },
     { fields: ['pan_number'] },
     { fields: ['organization_name'] },
     { fields: ['account_status'] },

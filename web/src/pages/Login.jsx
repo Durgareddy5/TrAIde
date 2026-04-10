@@ -44,24 +44,16 @@ const Login = () => {
   try {
     const res = await authService.login(data);
 
-    // ✅ FIX: Axios response structure
-    if (res.data.success) {
-      setAuth(
-        res.data.data.user,
-        res.data.data.access_token
-      );
+    const { user, access_token } = res.data;
 
-      toast.success(`Welcome back, ${res.data.data.user.first_name}!`);
-      navigate('/dashboard');
-    } else {
-      toast.error(res.data.message || 'Login failed');
-    }
+    setAuth(user, access_token);
+
+    toast.success(`Welcome back, ${user.first_name}!`);
+    navigate('/dashboard');
+
   } catch (err) {
-    // ✅ FIX: Better error handling
     toast.error(
-      err.response?.data?.message ||
-      err.message ||
-      'Login failed. Please check your credentials.'
+      err.message || 'Login failed. Please check your credentials.'
     );
   } finally {
     setLoading(false);

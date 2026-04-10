@@ -53,11 +53,15 @@ const placeOrder = async (userId, orderData) => {
 
   try {
     const {
-      symbol, exchange = 'NSE', transaction_type,
-      order_type, product_type = 'CNC',
-      quantity, price, trigger_price,
-      validity = 'DAY', notes, tag,
+    symbol, exchange = 'NSE', transaction_type,
+    order_type, product_type = 'CNC',
+    quantity, price, trigger_price,
+    validity = 'DAY', notes, tag,
     } = orderData;
+
+    // 🔥 NORMALIZE VALUES
+    const normalizedProductType = (product_type || 'CNC').toUpperCase().trim();
+    const normalizedTransactionType = (transaction_type || '').toLowerCase().trim();
 
     // 1. Get fund record
     const fund = await Fund.findOne({ where: { user_id: userId }, transaction: t });
@@ -84,7 +88,7 @@ const placeOrder = async (userId, orderData) => {
     }
 
     // 5. For SELL — check if user has holdings
-    if (transaction_type === 'sell' && product_type === 'CNC') {
+    if (transaction_type === 'sell' && product_type?.toUpperCase() === 'CNC') {
       const holding = await Holding.findOne({
         where: { user_id: userId, symbol: symbol.toUpperCase(), exchange },
         transaction: t,
@@ -138,9 +142,11 @@ const placeOrder = async (userId, orderData) => {
     // 8. If FILLED → update fund & portfolio
     if (initStatus === ORDER_STATUSES.FILLED) {
       await _executeFill(
-        { userId, order, execPrice, orderValue, chargesData,
-          transaction_type, product_type, symbol, exchange, quantity },
-        t
+      { userId, order, execPrice, orderValue, chargesData,
+        transaction_type: normalizedTransactionType,
+        product_type: normalizedProductType,
+        symbol, exchange, quantity },
+      t
       );
     } else {
       // Block amount for open limit/SL orders
@@ -216,7 +222,7 @@ const _executeFill = async (
     }
 
     // Update or create holding (CNC only)
-    if (product_type === 'CNC') {
+    if (product_type?.toUpperCase() === 'CNC') {
       const existing = await Holding.findOne({
         where: { user_id: userId, symbol: symbol.toUpperCase(), exchange },
         transaction: t,
@@ -338,6 +344,8 @@ const _executeFill = async (
     net_value:        netVal,
     executed_at:      new Date(),
   }, { transaction: t });
+  console.log("DEBUG PRODUCT TYPE:", product_type);
+  console.log("DEBUG TRANSACTION TYPE:", transaction_type);
 };
 
 // ─── MIS Position Update ───────────────────

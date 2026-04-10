@@ -45,7 +45,7 @@ const connectMySQL = async () => {
     // Sync all models (creates tables if they don't exist)
     // In production, use migrations instead
     if (env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
+      await sequelize.sync();
       console.log('✅ MySQL tables synchronized (alter mode).');
     }
 

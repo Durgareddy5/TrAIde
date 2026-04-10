@@ -18,10 +18,10 @@ import { initializeDatabases } from './config/database.js';
 dotenv.config();
 
 // Import all SQL models (side effects)
-import './models/sql/index.js';
+import './Models/sql/index.js';
 
 // Import all NoSQL models
-import './models/nosql/index.js';
+import './Models/nosql/index.js';
 
 // Import routes
 import routes from './Routes/index.js';
