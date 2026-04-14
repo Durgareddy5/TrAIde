@@ -10,6 +10,7 @@ import {
 import Button from '@/components/ui/Button';
 import useAuthStore from '@/store/authStore';
 import useThemeStore from '@/store/themeStore';
+import './Landing.css';
 
 // Animated Background Mesh
 const GradientMesh = () => (
@@ -160,10 +161,10 @@ const Landing = () => {
               <Zap size={20} className="text-white" />
             </div>
             <div>
-              <span className="text-lg font-heading font-bold gradient-text">ProTrade</span>
-              <span className="hidden sm:inline text-[10px] text-[var(--text-tertiary)] uppercase tracking-widest ml-2">
+              <span className="text-lg font-heading font-bold gradient-text">TrAIde</span>
+              {/* <span className="hidden sm:inline text-[10px] text-[var(--text-tertiary)] uppercase tracking-widest ml-2 margin-left-3">
                 Institutional
-              </span>
+              </span> */}
             </div>
           </div>
 
@@ -184,8 +185,8 @@ const Landing = () => {
               <Button variant="ghost" size="sm">Sign In</Button>
             </Link>
             <Link to="/register">
-              <Button variant="gradient" size="sm" iconRight={ArrowRight}>
-                Get Started
+              <Button variant="gradient" size="sm" iconRight={ArrowRight} className="rounded">
+                <span style={{"marginLeft" : "4px"}}>Get Started</span>
               </Button>
             </Link>
           </div>
@@ -194,10 +195,10 @@ const Landing = () => {
 
       {/* ─── Hero Section ───────────────────────────── */}
       <motion.section
-        className="relative pt-32 pb-20 px-6"
+        className="relative pt-32 pb-20 px-6 centered_div"
         style={{ y: heroY, opacity: heroOpacity }}
       >
-        <div className="max-w-5xl mx-auto text-center">
+        <div className="max-w-5xl mx-auto text-center centered_div_2">
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -244,12 +245,12 @@ const Landing = () => {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link to="/register">
-              <Button variant="gradient" size="lg" iconRight={ArrowRight}>
-                Start Paper Trading — Free
+              <Button variant="gradient" size="lg" iconRight={ArrowRight} className="rounded">
+                <span style={{"marginLeft" : "4px"}}>Start Paper Trading — Free</span>
               </Button>
             </Link>
-            <Button variant="secondary" size="lg" icon={Eye}>
-              Watch Demo
+            <Button variant="secondary" size="lg" icon={Eye} className="rounded">
+              <span style={{"marginLeft" : "4px","marginRight" : "4px"}}>Watch Demo</span>
             </Button>
           </motion.div>
 
@@ -258,7 +259,7 @@ const Landing = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex items-center justify-center gap-6 mt-10 text-[var(--text-tertiary)]"
+            className="flex items-center justify-center gap-6 mt-10 text-[var(--text-tertiary)] gapped"
           >
             {[
               { icon: Shield, text: 'Bank-Grade Security' },
@@ -356,7 +357,7 @@ const Landing = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-6 justify-center items-center">
             {features.map((feature, index) => (
               <FeatureCard key={index} {...feature} delay={index * 0.1} />
             ))}

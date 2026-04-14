@@ -22,6 +22,15 @@
   --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /*
+    Layout height constants — keep in sync with the JS constants
+    exported from DashboardLayout.jsx (TOPBAR_H / TICKER_H / HEADER_H).
+    These are used nowhere in CSS today but serve as documentation.
+  */
+  --topbar-h: 64px;
+  --ticker-h: 36px;
+  --header-h: 100px;   /* topbar + ticker */
 }
 
 /* ─── Dark Theme (Default) ─────────────────────────── */
@@ -525,12 +534,20 @@ h1, h2, h3, h4, h5, h6 {
   transition: opacity 300ms ease-out, transform 300ms ease-out;
 }
 
-/* ─── Noise Texture Overlay ────────────────────────── */
+/*
+  ─── Noise Texture Overlay ─────────────────────────
+  FIX: was z-index 9999 which put it above modals/dropdowns and
+  prevented backdrop-filter from compositing correctly in some browsers.
+  z-index 15 keeps it above plain page content (z-0) but safely below
+  the fixed UI chrome: ticker (z-20), topbar (z-30), sidebar (z-40),
+  profile dropdown (z-40) and search modal (z-50).
+  pointer-events: none is unchanged so it never blocks clicks.
+*/
 .noise-overlay::after {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 15;          /* was 9999 — see comment above */
   pointer-events: none;
   opacity: 0.015;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");

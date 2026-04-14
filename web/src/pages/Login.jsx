@@ -11,6 +11,8 @@ import {
   ArrowRight, Loader2
 } from 'lucide-react';
 
+import './Login.css';
+
 
 /* ─── tiny animated stat pill ──────────────────── */
 const StatPill = ({ icon: Icon, label, value, delay }) => (
@@ -148,7 +150,7 @@ const Login = () => {
           </motion.div>
 
           {/* Stats */}
-          <div className="flex flex-wrap gap-2 mb-10">
+          <div className="flex flex-wrap gap-2 mb-10 aligned_2">
             <StatPill icon={TrendingUp}  label="Indices"    value="19+"    delay={0.2} />
             <StatPill icon={BarChart3}   label="Stocks"     value="5000+"  delay={0.3} />
             <StatPill icon={Shield}      label="Security"   value="Bank-Grade" delay={0.4} />
@@ -160,9 +162,9 @@ const Login = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
             className="rounded-2xl bg-white/5 border border-white/10
-                       backdrop-blur-sm p-5 overflow-hidden"
+                       backdrop-blur-sm p-5 overflow-hidden rounding"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 aligned">
               <div>
                 <p className="text-xs text-white/40 uppercase tracking-wider">NIFTY 50</p>
                 <p className="text-xl font-mono font-bold text-white">23,519.35</p>
@@ -196,8 +198,7 @@ const Login = () => {
       </div>
 
       {/* ══════════ RIGHT PANEL — Login Form ══════════ */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12
-                      bg-[var(--bg-secondary)]">
+      <div className="flex-1 flex items-center justify-center px-6 lg:px-16 py-6 lg:py-12 bg-[var(--bg-secondary)]">
         <motion.div
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
@@ -236,7 +237,7 @@ const Login = () => {
               </label>
               <div className="relative">
                 <Mail size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2
+                  className="absolute left-2 top-1/2 -translate-y-1/2
                              text-[var(--text-tertiary)]" />
                 <input
                   type="email"
@@ -254,7 +255,7 @@ const Login = () => {
                              placeholder:text-[var(--text-tertiary)]
                              focus:outline-none focus:border-[var(--accent-primary)]
                              focus:ring-2 focus:ring-[var(--accent-primary)]/20
-                             transition-all duration-200"
+                             transition-all duration-200 adjusted"
                 />
               </div>
               {errors.email && (
@@ -278,7 +279,7 @@ const Login = () => {
               </div>
               <div className="relative">
                 <Lock size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2
+                  className="absolute left-2 top-1/2 -translate-y-1/2
                              text-[var(--text-tertiary)]" />
                 <input
                   type={showPwd ? 'text' : 'password'}
@@ -293,12 +294,12 @@ const Login = () => {
                              placeholder:text-[var(--text-tertiary)]
                              focus:outline-none focus:border-[var(--accent-primary)]
                              focus:ring-2 focus:ring-[var(--accent-primary)]/20
-                             transition-all duration-200"
+                             transition-all duration-200 adjusted"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2
+                  className="absolute right-2 top-1/2 -translate-y-1/2
                              text-[var(--text-tertiary)] hover:text-[var(--text-primary)]
                              transition-colors"
                 >
@@ -335,7 +336,7 @@ const Login = () => {
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
+          <div className="flex items-center gap-4 py-12">
             <div className="flex-1 h-px bg-[var(--border-primary)]" />
             <span className="text-xs text-[var(--text-tertiary)]">OR</span>
             <div className="flex-1 h-px bg-[var(--border-primary)]" />

@@ -9,6 +9,7 @@ import ThemeToggle from '@/components/ui/ThemeToggle';
 import useAuthStore from '@/store/authStore';
 import useMarketStore from '@/store/marketStore';
 import { useNavigate } from 'react-router-dom';
+import { TOPBAR_H } from './DashboardLayout';  // ← shared constant
 
 const Topbar = ({ sidebarCollapsed }) => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const Topbar = ({ sidebarCollapsed }) => {
   const [showSearch, setShowSearch] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const searchRef = useRef(null);
+  const searchRef  = useRef(null);
   const profileRef = useRef(null);
 
   // Close dropdowns on outside click
@@ -31,7 +32,7 @@ const Topbar = ({ sidebarCollapsed }) => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Keyboard shortcut for search
+  // Ctrl/⌘K → open search  |  Escape → close overlays
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -54,17 +55,25 @@ const Topbar = ({ sidebarCollapsed }) => {
   };
 
   return (
+    /*
+      z-30 keeps the topbar above the ticker (z-20) and content,
+      but below the sidebar (z-40) and the search modal (z-50).
+      Height is set via the shared TOPBAR_H constant (64 px / h-16).
+    */
     <header
       className={cn(
-        'fixed top-0 right-0 z-30 h-16',
+        'fixed top-0 right-0 z-30',
         'bg-[var(--bg-secondary)]/80 backdrop-blur-xl',
         'border-b border-[var(--border-primary)]',
         'flex items-center justify-between px-6',
         'transition-all duration-300',
       )}
-      style={{ left: sidebarCollapsed ? '72px' : '256px' }}
+      style={{
+        left:   sidebarCollapsed ? 72 : 256,
+        height: TOPBAR_H,
+      }}
     >
-      {/* ─── Left: Search ─────────────── */}
+      {/* ─── Left: Search ─────────────────────────── */}
       <div className="flex items-center gap-4 flex-1">
         <button
           onClick={() => setShowSearch(true)}
@@ -85,7 +94,7 @@ const Topbar = ({ sidebarCollapsed }) => {
         </button>
       </div>
 
-      {/* ─── Right: Actions ───────────── */}
+      {/* ─── Right: Actions ───────────────────────── */}
       <div className="flex items-center gap-3">
         {/* Market Status */}
         <div className={cn(
@@ -139,7 +148,10 @@ const Topbar = ({ sidebarCollapsed }) => {
             )} />
           </button>
 
-          {/* Dropdown Menu */}
+          {/*
+            Dropdown — z-40 so it renders above the ticker (z-20)
+            and page content, but still below the search modal (z-50).
+          */}
           <AnimatePresence>
             {showProfile && (
               <motion.div
@@ -148,7 +160,7 @@ const Topbar = ({ sidebarCollapsed }) => {
                 exit={{ opacity: 0, y: 8, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
                 className={cn(
-                  'absolute right-0 top-full mt-2 w-64',
+                  'absolute right-0 top-full mt-2 w-64 z-40',
                   'bg-[var(--bg-card)] border border-[var(--border-primary)]',
                   'rounded-xl shadow-[var(--shadow-lg)]',
                   'overflow-hidden'
@@ -172,16 +184,13 @@ const Topbar = ({ sidebarCollapsed }) => {
                 {/* Menu Items */}
                 <div className="py-1">
                   {[
-                    { icon: User, label: 'My Profile', path: '/settings' },
-                    { icon: SettingsIcon, label: 'Settings', path: '/settings' },
-                    { icon: HelpCircle, label: 'Help & Support', path: '/help' },
+                    { icon: User,         label: 'My Profile', path: '/settings' },
+                    { icon: SettingsIcon, label: 'Settings',   path: '/settings' },
+                    { icon: HelpCircle,   label: 'Help & Support', path: '/help' },
                   ].map((item) => (
                     <button
                       key={item.label}
-                      onClick={() => {
-                        navigate(item.path);
-                        setShowProfile(false);
-                      }}
+                      onClick={() => { navigate(item.path); setShowProfile(false); }}
                       className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all duration-200"
                     >
                       <item.icon size={16} />
@@ -206,11 +215,15 @@ const Topbar = ({ sidebarCollapsed }) => {
         </div>
       </div>
 
-      {/* ─── Search Modal (Overlay) ──── */}
+      {/* ─── Search Modal ────────────────────────────
+          z-50 puts it above everything (sidebar z-40, topbar z-30, ticker z-20).
+          The backdrop uses isolation so backdrop-filter composites correctly
+          even when .noise-overlay::after (z-9999) is above it in the DOM.
+      ──────────────────────────────────────────────── */}
       <AnimatePresence>
         {showSearch && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-start justify-center pt-24"
+            className="fixed inset-0 z-50 flex items-start justify-center pt-24 isolate"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
