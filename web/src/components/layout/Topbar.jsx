@@ -14,7 +14,7 @@ import { TOPBAR_H } from './DashboardLayout';  // ← shared constant
 const Topbar = ({ sidebarCollapsed }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { marketStatus } = useMarketStore();
+  const marketStatus = useMarketStore((s) => s.marketStatus) || {};
   const [showSearch, setShowSearch] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,18 +104,18 @@ const Topbar = ({ sidebarCollapsed }) => {
         )}>
           <div className={cn(
             'w-2 h-2 rounded-full',
-            marketStatus.status === 'open'
-              ? 'bg-[var(--profit)] pulse-dot'
-              : marketStatus.status === 'pre_open'
-                ? 'bg-[var(--warning)] animate-pulse'
-                : 'bg-[var(--text-tertiary)]'
+            marketStatus?.status === 'open'
+            ? 'bg-[var(--profit)] pulse-dot'
+            : marketStatus?.status === 'pre_open'
+              ? 'bg-[var(--warning)] animate-pulse'
+              : 'bg-[var(--text-tertiary)]'
           )} />
           <span className={cn(
-            marketStatus.status === 'open'
+            marketStatus?.status === 'open'
               ? 'text-[var(--profit)]'
               : 'text-[var(--text-secondary)]'
           )}>
-            {marketStatus.message || 'Market Closed'}
+            {marketStatus?.message || 'Market Closed'}
           </span>
         </div>
 

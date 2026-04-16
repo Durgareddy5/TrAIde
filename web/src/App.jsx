@@ -26,6 +26,7 @@ import Analytics  from '@/pages/Analytics';
 import Settings   from '@/pages/Settings';
 import Trades from '@/pages/Trades'; 
 import PriceAlerts from '@/pages/PriceAlerts';
+import useLiveMarketData from '@/hooks/useLiveMarketData';
 
 // Auth Guard
 const PrivateRoute = ({ children }) => {
@@ -40,6 +41,7 @@ const PublicRoute = ({ children }) => {
 };
 
 const App = () => {
+  useLiveMarketData();
   const { initTheme } = useThemeStore();
 
   useEffect(() => {

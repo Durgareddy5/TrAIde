@@ -1,7 +1,13 @@
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:3000', {
-  transports: ['websocket'],
-});
+let socket;
 
-export default socket;
+export const getSocket = () => {
+  if (!socket) {
+    socket = io('http://localhost:5001', {
+      transports: ['websocket'],
+      reconnection: true,
+    });
+  }
+  return socket;
+};

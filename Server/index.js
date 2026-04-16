@@ -12,7 +12,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 import http from 'http';
-import app from './app.js';
+// import app from './app.js';
 import { initMarketSocket } from './services/marketSocket.js';
 
 import env from './config/environment.js';
@@ -123,7 +123,7 @@ const startServer = async () => {
   try {
     await initializeDatabases();
 
-    app.listen(env.PORT, () => {
+    server.listen(env.PORT, () => {
       console.log('\n═══════════════════════════════════════════════');
       console.log('  🚀 ProTrade Institutional API Server');
       console.log('═══════════════════════════════════════════════');
@@ -140,5 +140,6 @@ const startServer = async () => {
 };
 
 startServer();
+
 
 export default app;

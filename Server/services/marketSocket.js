@@ -33,13 +33,21 @@ const fetchPrices = async () => {
 
 export const initMarketSocket = (server) => {
   io = new Server(server, {
-    cors: {
-      origin: '*',
-    },
+  cors: {
+    origin: 'http://localhost:3000', // ✅ frontend URL
+    methods: ['GET', 'POST'],
+  },
   });
 
   io.on('connection', (socket) => {
     console.log('📡 Client connected:', socket.id);
+
+    // ✅ send initial state
+    socket.emit('market_status', {
+      open: isMarketOpen(),
+      status: isMarketOpen() ? 'open' : 'closed',
+      message: isMarketOpen() ? 'Market Open' : 'Market Closed',
+    });
 
     socket.on('disconnect', () => {
       console.log('❌ Client disconnected:', socket.id);
@@ -48,15 +56,19 @@ export const initMarketSocket = (server) => {
 
   // 🔁 Tick loop (throttled)
   interval = setInterval(async () => {
-    const marketOpen = isMarketOpen();
+  const marketOpen = isMarketOpen();
 
-    if (!marketOpen) {
-      io.emit('market_status', { open: false });
-      return;
-    }
+  // ✅ ALWAYS send status
+  io.emit('market_status', {
+    open: marketOpen,
+    status: marketOpen ? 'open' : 'closed',
+    message: marketOpen ? 'Market Open' : 'Market Closed',
+  });
 
-    const ticks = await fetchPrices();
+  if (!marketOpen) return;
 
-    io.emit('ticks', ticks);
-  }, 200); // ⚡ 200ms throttle
+  const ticks = await fetchPrices();
+
+  io.emit('ticks', ticks);
+  }, 200);
 };

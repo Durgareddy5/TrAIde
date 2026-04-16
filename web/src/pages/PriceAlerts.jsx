@@ -7,6 +7,8 @@ import {
 import tradingService from '@/services/tradingService';
 import Skeleton from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
+import useMarketStore from '@/store/marketStore';
+
 
 /* ─── CONDITION MAP ───────────────── */
 const CONDITION_MAP = {
@@ -29,6 +31,9 @@ const PriceAlerts = () => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const prices = useMarketStore((s) => s.prices);
+
+  console.log(prices['RELIANCE']?.price);
 
   const [form, setForm] = useState({
     symbol: '',
@@ -136,6 +141,8 @@ const PriceAlerts = () => {
             Get notified when price conditions are met
           </p>
         </div>
+
+
 
         <div className="flex gap-2">
           <button
