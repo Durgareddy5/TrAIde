@@ -3,6 +3,7 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../../config/mysql.js';
 
+
 const PriceAlert = sequelize.define('price_alerts', {
   id: {
     type: DataTypes.UUID,

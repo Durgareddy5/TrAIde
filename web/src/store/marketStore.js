@@ -1,26 +1,22 @@
 import { create } from 'zustand';
 
 const useMarketStore = create((set) => ({
-  // Market Status
-  marketStatus: {
-    status: 'closed',
-    message: 'Market is Closed',
-  },
-  setMarketStatus: (status) => set({ marketStatus: status }),
+  prices: {},
+  marketOpen: false,
 
-  // Selected Stock (for detail page / order form)
-  selectedStock: null,
-  setSelectedStock: (stock) => set({ selectedStock: stock }),
+  updateTicks: (ticks) =>
+    set((state) => {
+      const updated = { ...state.prices };
 
-  // Market Indices
-  indices: [],
-  setIndices: (indices) => set({ indices }),
+      ticks.forEach((t) => {
+        updated[t.symbol] = t;
+      });
 
-  // Global Search
-  searchQuery: '',
-  setSearchQuery: (query) => set({ searchQuery: query }),
-  isSearchOpen: false,
-  setSearchOpen: (open) => set({ isSearchOpen: open }),
+      return { prices: updated };
+    }),
+
+  setMarketStatus: (status) =>
+    set({ marketOpen: status }),
 }));
 
 export default useMarketStore;

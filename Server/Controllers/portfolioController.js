@@ -50,8 +50,10 @@ export const getTradeLogs = async (req, res) => {
   try {
     const result = await portfolioService.getTradeLogs(req.user.id, req.query);
     return ApiResponse.success(res, {
-      data: result.trades,
-      meta: result.pagination,
+      data: {
+        trades: result.trades,
+        pagination: result.pagination,
+      },
     });
   } catch (error) {
     logger.error('GetTradeLogs error:', { error: error.message });

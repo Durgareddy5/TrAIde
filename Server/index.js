@@ -11,6 +11,10 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import dotenv from 'dotenv';
 
+import http from 'http';
+import app from './app.js';
+import { initMarketSocket } from './services/marketSocket.js';
+
 import env from './config/environment.js';
 import { initializeDatabases } from './config/database.js';
 
@@ -27,6 +31,10 @@ import './Models/nosql/index.js';
 import routes from './Routes/index.js';
 
 const app = express();
+
+const server = http.createServer(app);
+
+initMarketSocket(server);
 
 // ─── Security Middleware ───────────────────
 app.use(helmet({

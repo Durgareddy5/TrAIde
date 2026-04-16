@@ -24,6 +24,8 @@ import Watchlist  from '@/pages/Watchlist';
 import Funds      from '@/pages/Funds';
 import Analytics  from '@/pages/Analytics';
 import Settings   from '@/pages/Settings';
+import Trades from '@/pages/Trades'; 
+import PriceAlerts from '@/pages/PriceAlerts';
 
 // Auth Guard
 const PrivateRoute = ({ children }) => {
@@ -70,6 +72,8 @@ const App = () => {
           <Route path="/funds"      element={<Funds />} />
           <Route path="/analytics"  element={<Analytics />} />
           <Route path="/settings"   element={<Settings />} />
+          <Route path="/trades" element={<Trades />} />
+          <Route path="/alerts" element={<PriceAlerts />} />
         </Route>
 
         {/* ── 404 ── */}

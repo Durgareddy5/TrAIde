@@ -44,6 +44,13 @@ const tradingService = {
   getTopGainers: () => api.get('/market/top-gainers'),
   getTopLosers: () => api.get('/market/top-losers'),
   getMostActive: () => api.get('/market/most-active'),
+
+
+  // Alerts
+  getAlerts: () => api.get('/alerts'),
+  createAlert: (data) => api.post('/alerts', data),
+  deleteAlert: (id) => api.delete(`/alerts/${id}`),
+  toggleAlert: (id) => api.put(`/alerts/${id}/toggle`),
 };
 
 export default tradingService;
