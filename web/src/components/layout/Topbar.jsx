@@ -21,6 +21,10 @@ const Topbar = ({ sidebarCollapsed }) => {
   const searchRef  = useRef(null);
   const profileRef = useRef(null);
 
+  const ticks = useMarketStore((s) => s.ticks);
+
+  console.log('🎯 UI TICKS:', ticks);
+
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e) => {

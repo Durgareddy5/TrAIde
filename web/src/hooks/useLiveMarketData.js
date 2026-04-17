@@ -9,25 +9,53 @@ const useLiveMarketData = () => {
   const buffer = useRef([]);
 
   useEffect(() => {
-  const socket = getSocket();
+    const socket = getSocket();
 
-  socket.on('connect', () => {
-    console.log('✅ Connected to socket:', socket.id);
-  });
+    // ✅ CONNECT
+    socket.on('connect', () => {
+      console.log('✅ Connected to socket:', socket.id);
+    });
 
-  socket.on('ticks', (data) => {
-    buffer.current = data;
-  });
+    // ✅ RECEIVE TICKS (ONLY ONCE)
+    socket.on('ticks', (data) => {
+      console.log('📥 RECEIVED TICKS:', data);
 
-  socket.on('market_status', (data) => {
-    setMarketStatus(data.open);
-  });
+      if (!data || !Array.isArray(data)) {
+        console.log('⚠️ Invalid ticks received');
+        return;
+      }
 
-  return () => {
-    socket.off('ticks');
-    socket.off('market_status');
-  };
-}, []);
+      buffer.current = data;
+    });
+
+    // ✅ RECEIVE MARKET STATUS (FIXED)
+    socket.on('market_status', (data) => {
+      console.log('📡 MARKET STATUS:', data);
+
+      if (!data) return;
+
+      setMarketStatus(data); // ✅ FIX: send full object, not data.open
+    });
+
+    // ✅ THROTTLE UI UPDATES
+    const interval = setInterval(() => {
+      if (buffer.current && buffer.current.length > 0) {
+        console.log('🚀 SENDING TO STORE:', buffer.current);
+
+        updateTicks(buffer.current);
+
+        buffer.current = [];
+      }
+    }, 150);
+
+    // ✅ CLEANUP
+    return () => {
+      socket.off('connect');
+      socket.off('ticks');
+      socket.off('market_status');
+      clearInterval(interval);
+    };
+  }, []);
 
   return null;
 };

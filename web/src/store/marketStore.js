@@ -1,22 +1,25 @@
 import { create } from 'zustand';
 
 const useMarketStore = create((set) => ({
-  prices: {},
-  marketOpen: false,
+  // ✅ MUST HAVE DEFAULT VALUES
+  ticks: [],
 
-  updateTicks: (ticks) =>
-    set((state) => {
-      const updated = { ...state.prices };
+  marketStatus: {
+    open: false,
+    status: 'closed',
+    message: 'Market Closed',
+  },
 
-      ticks.forEach((t) => {
-        updated[t.symbol] = t;
-      });
+  // ✅ UPDATE TICKS
+  updateTicks: (data) => {
+    console.log('🧠 STORE UPDATED:', data);
+    set({ ticks: data });
+  },
 
-      return { prices: updated };
-    }),
-
-  setMarketStatus: (status) =>
-    set({ marketOpen: status }),
+  // ✅ UPDATE STATUS
+  setMarketStatus: (status) => {
+    set({ marketStatus: status });
+  },
 }));
 
 export default useMarketStore;
