@@ -12,6 +12,8 @@ import {
 import { formatINR, formatPercent, getPnLColor } from '@/utils/formatters';
 import Skeleton from '@/components/ui/Skeleton';
 import Badge from '@/components/ui/Badge';
+import useMarketStore from '@/store/marketStore';
+
 
 /* ─── Mock Data ───────────────────────────────── */
 const INDICES = [
@@ -102,10 +104,10 @@ const IndexCard = ({ idx, onClick }) => {
       </div>
 
       <p className="text-xl font-mono font-bold text-[var(--text-primary)] mb-1">
-        {idx.value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+        {(idx.value ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
       </p>
       <p className={`text-xs font-mono ${getPnLColor(idx.change)}`}>
-        {idx.change >= 0 ? '+' : ''}{idx.change.toFixed(2)}
+        {idx.change >= 0 ? '+' : ''}{(idx.change ?? 0).toFixed(2)}
       </p>
 
       {/* Spark line */}
@@ -189,7 +191,7 @@ const MoverRow = ({ stock, rank, onClick }) => {
       </td>
       <td className="px-4 py-3 text-right">
         <p className={`text-sm font-mono font-semibold ${getPnLColor(stock.pct)}`}>
-          {up ? '+' : ''}{stock.pct.toFixed(2)}%
+          {up ? '+' : ''}{(stock.pct || 0).toFixed(2)}%
         </p>
         <p className={`text-xs font-mono ${getPnLColor(stock.change)}`}>
           {up ? '+' : ''}{typeof stock.change === 'number'
@@ -241,6 +243,54 @@ const Markets = () => {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('indices');
   const [search, setSearch]  = useState('');
+  const ticks = useMarketStore((s) => s.ticks);
+  const [liveData, setLiveData] = useState({});
+  console.log('LIVE DATA:', liveData);
+  const marketArray = Object.values(liveData);
+
+  const mergedIndices = INDICES.map((idx) => {
+  const live = liveData[idx.symbol] || liveData[idx.symbol.replace('_', '')];
+
+  if (!live) return idx;
+
+  return {
+    ...idx,
+    value: live.price,
+    change: live.change,
+    pct: live.pct,
+  };
+  }); 
+
+
+  useEffect(() => {
+  if (!ticks || ticks.length === 0) return;
+
+  console.log('📊 MARKETS TICKS:', ticks);
+
+  setLiveData((prev) => {
+    const updated = { ...prev };
+
+    ticks.forEach((t) => {
+      if (!t.symbol || typeof t.price !== 'number') return;
+
+      const prevPrice = updated[t.symbol]?.prevPrice || t.price;
+
+      const change = t.price - prevPrice;
+      const pct = prevPrice !== 0 ? (change / prevPrice) * 100 : 0;
+
+      updated[t.symbol] = {
+        symbol: t.symbol,
+        price: t.price,
+        prevPrice: updated[t.symbol]?.price || t.price,
+        change,
+        pct,
+        timestamp: t.timestamp,
+      };
+    });
+
+    return updated;
+  });
+}, [ticks]);
 
   useEffect(() => {
     setTimeout(() => setLoading(false), 600);
@@ -290,7 +340,8 @@ const Markets = () => {
     { key:'active',   label:'Most Active',  icon:Flame       },
     { key:'heatmap',  label:'Heat Map',     icon:Activity    },
   ];
-
+  
+  
   return (
     <div className="space-y-6">
 
@@ -356,12 +407,17 @@ const Markets = () => {
             ? Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className="h-52 rounded-2xl"/>
               ))
-            : INDICES.map((idx) => (
+            : mergedIndices.map((idx) => (
                 <IndexCard
-                  key={idx.symbol}
-                  idx={idx}
-                  onClick={() => navigate(`/stock/${idx.symbol}`)}
-                />
+                key={idx.symbol}
+                idx={{
+                  ...idx,
+                  value: idx.value ?? idx.price ?? 0,
+                  change: idx.change ?? 0,
+                  pct: idx.pct ?? 0,
+                }}
+                onClick={() => navigate(`/stock/${idx.symbol}`)}
+              />
               ))
           }
         </div>
@@ -423,18 +479,41 @@ const Markets = () => {
                         ))}
                       </tr>
                     ))
-                  : (activeSection === 'gainers' ? GAINERS
-                    : activeSection === 'losers'  ? LOSERS
-                    : ACTIVE)
-                    .filter((s) => search
-                      ? s.symbol.toLowerCase().includes(search.toLowerCase())
-                      : true)
+                  : (() => {
+                  let sorted = [...Object.values(liveData)];
+                
+                  if (activeSection === 'gainers') {
+                    sorted.sort((a, b) => b.pct - a.pct);
+                  } else if (activeSection === 'losers') {
+                    sorted.sort((a, b) => a.pct - b.pct);
+                  } else {
+                    sorted.sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+                  }
+                  
+                  
+                  return sorted
+                    .filter((s) =>
+                      search
+                        ? s.symbol.toLowerCase().includes(search.toLowerCase())
+                        : true
+                    )
+                    .slice(0, 10)
                     .map((s, i) => (
                       <MoverRow
-                        key={s.symbol} stock={s} rank={i}
+                        key={s.symbol}
+                        stock={{
+                          symbol: s.symbol,
+                          name: s.symbol,
+                          price: s.price,
+                          change: s.change,
+                          pct: s.pct,
+                          vol: 'LIVE',
+                        }}
+                        rank={i}
                         onClick={() => navigate(`/stock/${s.symbol}`)}
                       />
-                    ))
+                    ));
+                })()
                 }
               </tbody>
             </table>

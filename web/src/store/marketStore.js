@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 
 const useMarketStore = create((set) => ({
-  // ✅ MUST HAVE DEFAULT VALUES
-  ticks: [],
+  // ================================
+  // STATE
+  // ================================
+
+  ticks: [],         // raw tick data
+  candles: [],       // OHLC data
 
   marketStatus: {
     open: false,
@@ -10,16 +14,28 @@ const useMarketStore = create((set) => ({
     message: 'Market Closed',
   },
 
-  // ✅ UPDATE TICKS
+  // ================================
+  // ACTIONS
+  // ================================
+
+  // 🔥 Update ticks (stream)
   updateTicks: (data) => {
-    console.log('🧠 STORE UPDATED:', data);
+    console.log('🧠 STORE UPDATED (ticks):', data);
     set({ ticks: data });
   },
 
-  // ✅ UPDATE STATUS
-  setMarketStatus: (status) => {
-    set({ marketStatus: status });
+  // 🔥 Update candles (aggregated)
+  setCandles: (data) => {
+    console.log('📊 STORE UPDATED (candles):', data.length);
+    set({ candles: data });
   },
+
+  // 🔥 FIXED: Accept FULL OBJECT
+  setMarketStatus: (statusObj) => {
+    console.log('📡 MARKET STATUS:', statusObj);
+    set({ marketStatus: statusObj });
+  },
+
 }));
 
 export default useMarketStore;

@@ -16,6 +16,7 @@ import tradingService    from '@/services/tradingService';
 import { formatINR, formatPercent, formatDate, getPnLColor } from '@/utils/formatters';
 import Skeleton, { SkeletonCard } from '@/components/ui/Skeleton';
 import Badge from '@/components/ui/Badge';
+import useMarketStore from '@/store/marketStore';
 
 /* ─── Animated summary card ────────────────── */
 const SummaryCard = ({ title, value, change, changeLabel, icon: Icon,
@@ -185,6 +186,7 @@ const Dashboard = () => {
   const [positions, setPositions]     = useState([]);
   const [indices, setIndices]         = useState([]);
   const [chartData, setChartData]     = useState([]);
+  const ticks = useMarketStore((s) => s.ticks);
 
   /* ── Mock chart data ── */
   const generateChartData = () =>
@@ -253,6 +255,35 @@ const Dashboard = () => {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  useEffect(() => {
+  if (!ticks || ticks.length === 0) return;
+
+  console.log('📊 DASHBOARD RECEIVED TICKS:', ticks);
+
+  // 🔥 Update Holdings LIVE
+  setHoldings((prev) =>
+    prev.map((h) => {
+      const tick = ticks.find((t) => t.symbol === h.symbol);
+
+      if (!tick) return h;
+
+      const pnl =
+        (tick.price - h.average_price) * h.quantity;
+
+      const pnlPercentage =
+        ((tick.price - h.average_price) / h.average_price) * 100;
+
+      return {
+        ...h,
+        current_price: tick.price,
+        pnl,
+        pnl_percentage: pnlPercentage,
+      };
+    })
+  );
+
+}, [ticks]);
 
   const hour = new Date().getHours();
   const greeting =
