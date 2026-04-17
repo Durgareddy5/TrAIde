@@ -7,6 +7,7 @@ import {
   LineChart, PieChart, Activity, Layers, Cpu,
   ChevronRight, Star, Users, Building2, Wallet,
 } from 'lucide-react';
+import TrAIdeUrl from "@/assets/TrAIde_1.png";
 import Button from '@/components/ui/Button';
 import useAuthStore from '@/store/authStore';
 import useThemeStore from '@/store/themeStore';
@@ -154,17 +155,17 @@ const Landing = () => {
       <Particles />
 
       {/* ─── Navigation ─────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-[var(--glass-border)]">
+      <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-[var(--glass-border)] fixed_1">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0052FF] to-[#7C3AED] flex items-center justify-center shadow-[0_0_20px_rgba(0,82,255,0.3)]">
-              <Zap size={20} className="text-white" />
+            <div className="w-9 h-9 rounded-3xl flex items-center justify-center shadow-[0_0_20px_rgba(0,82,255,0.3)]">
+              <img 
+                src={TrAIdeUrl} 
+                alt="TrAIde"
+              />
             </div>
             <div>
               <span className="text-lg font-heading font-bold gradient-text">TrAIde</span>
-              {/* <span className="hidden sm:inline text-[10px] text-[var(--text-tertiary)] uppercase tracking-widest ml-2 margin-left-3">
-                Institutional
-              </span> */}
             </div>
           </div>
 
@@ -346,18 +347,18 @@ const Landing = () => {
       </motion.section>
 
       {/* ─── Features Section ───────────────────────── */}
-      <section id="features" className="relative py-20 px-6">
+      <section id="features" className="relative py-20 px-6 fixed">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold text-[var(--text-primary)] mb-4">
               Powerful Features for Smart Trading
             </h2>
-            <p className="text-[var(--text-secondary)] max-w-2xl mx-auto">
+            <p className="text-[var(--text-secondary)] max-w-2xl mx-auto centered_div_3">
               Everything you need to analyze, simulate, and execute trading strategies.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 justify-center items-center">
+          <div className="grid md:grid-cols-3 gap-6 justify-center items-center rounded">
             {features.map((feature, index) => (
               <FeatureCard key={index} {...feature} delay={index * 0.1} />
             ))}
@@ -366,7 +367,7 @@ const Landing = () => {
       </section>
 
       {/* ─── Stats Section ───────────────────────── */}
-      <section className="py-16 px-6 border-t border-[var(--border-primary)]">
+      <section className="py-16 px-6 border-t border-[var(--border-primary)] centered_div_3">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
           <StatItem value="10K+" label="Active Traders" />
           <StatItem value="₹500Cr+" label="Simulated Volume" />
@@ -377,7 +378,7 @@ const Landing = () => {
 
       {/* ─── Footer ───────────────────────── */}
       <footer className="py-10 px-6 border-t border-[var(--border-primary)] text-center text-sm text-[var(--text-tertiary)]">
-        © {new Date().getFullYear()} ProTrade. All rights reserved.
+        © {new Date().getFullYear()} TrAIde. All rights reserved.
       </footer>
     </div>
   );

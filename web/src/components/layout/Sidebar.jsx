@@ -9,6 +9,7 @@ import {
   Zap, IndianRupee, PieChart, LineChart, Target,
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
+import TrAIdeUrl from "@/assets/TrAIde_1.png";
 
 const navItems = [
   {
@@ -65,8 +66,11 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         collapsed ? 'justify-center' : 'gap-3'
       )}>
         <div className="relative">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0052FF] to-[#7C3AED] flex items-center justify-center shadow-[0_0_20px_rgba(0,82,255,0.3)]">
-            <Zap size={20} className="text-white" />
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(0,82,255,0.3)]">
+            <img 
+              src={TrAIdeUrl} 
+              alt="TrAIde"
+            />
           </div>
           {/* Live Market Indicator */}
           <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[var(--profit)] pulse-dot" />
@@ -82,7 +86,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
               className="overflow-hidden"
             >
               <h1 className="text-lg font-heading font-bold gradient-text whitespace-nowrap">
-                ProTrade
+                TrAIde
               </h1>
               <p className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-widest -mt-0.5 whitespace-nowrap">
                 Institutional

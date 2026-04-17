@@ -10,6 +10,7 @@ import {
 import useAuthStore  from '@/store/authStore';
 import authService   from '@/services/authService';
 import toast         from 'react-hot-toast';
+import '@/pages/Register.css';
 
 /* ─── Step indicator ─────────────────────────── */
 const StepDot = ({ step, current, label }) => (
@@ -118,13 +119,13 @@ const Register = () => {
           <span className="text-2xl font-heading font-bold
                            bg-gradient-to-r from-[#0052FF] to-[#7C3AED]
                            bg-clip-text text-transparent">
-            ProTrade Institutional
+            TrAIde
           </span>
         </div>
 
         {/* Card */}
         <div className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                        rounded-2xl shadow-[var(--shadow-lg)] overflow-hidden">
+                        rounded-2xl shadow-[var(--shadow-lg)] overflow-hidden rounding">
 
           {/* Progress bar */}
           <div className="h-1 bg-[var(--bg-tertiary)]">
@@ -185,7 +186,7 @@ const Register = () => {
                               minLength: { value: 2, message: 'Min 2 chars' },
                             })}
                             placeholder="Arjun"
-                            className={`pl-9 ${inp(errors.first_name)}`}
+                            className={`pl-9 ${inp(errors.first_name)}`} style={{ paddingLeft: '36px' }}
                           />
                         </div>
                         {errors.first_name && (
@@ -207,7 +208,7 @@ const Register = () => {
                               minLength: { value: 2, message: 'Min 2 chars' },
                             })}
                             placeholder="Sharma"
-                            className={`pl-9 ${inp(errors.last_name)}`}
+                            className={`pl-9 ${inp(errors.last_name)}`} style={{ paddingLeft: '36px' }}
                           />
                         </div>
                         {errors.last_name && (
@@ -235,7 +236,7 @@ const Register = () => {
                             },
                           })}
                           placeholder="arjun@tcs.com"
-                          className={`pl-9 ${inp(errors.email)}`}
+                          className={`pl-9 ${inp(errors.email)}`} style={{ paddingLeft: '36px' }}
                         />
                       </div>
                       {errors.email && (
@@ -255,8 +256,8 @@ const Register = () => {
                         <input
                           type="tel"
                           {...register('phone')}
-                          placeholder="+91 98765 43210"
-                          className={`pl-9 ${inp(false)}`}
+                          placeholder="98765 43210"
+                          className={`pl-9 ${inp(false)}`} style={{ paddingLeft: '36px' }}
                         />
                       </div>
                     </div>
@@ -293,7 +294,7 @@ const Register = () => {
                         <input
                           {...register('organization_name')}
                           placeholder="Tata Consultancy Services Ltd"
-                          className={`pl-9 ${inp(false)}`}
+                          className={`pl-9 ${inp(false)}`} style={{ paddingLeft: '36px' }}
                         />
                       </div>
                     </div>
@@ -326,7 +327,7 @@ const Register = () => {
                         <input
                           {...register('designation')}
                           placeholder="Chief Investment Officer"
-                          className={`pl-9 ${inp(false)}`}
+                          className={`pl-9 ${inp(false)}`} style={{ paddingLeft: '36px' }}
                         />
                       </div>
                     </div>
@@ -347,7 +348,7 @@ const Register = () => {
                           })}
                           placeholder="ABCDE1234F"
                           className={`pl-9 uppercase ${inp(errors.pan_number)}`}
-                          style={{ textTransform: 'uppercase' }}
+                          style={{ textTransform: 'uppercase' , paddingLeft: '36px' }}
                         />
                       </div>
                       {errors.pan_number && (
@@ -397,7 +398,7 @@ const Register = () => {
                             },
                           })}
                           placeholder="••••••••"
-                          className={`pl-9 ${inp(errors.password)}`}
+                          className={`pl-9 ${inp(errors.password)}`} style={{ paddingLeft: '36px' }}
                         />
                       </div>
                       {errors.password && (
@@ -422,7 +423,7 @@ const Register = () => {
                               v === watch('password') || 'Passwords do not match',
                           })}
                           placeholder="••••••••"
-                          className={`pl-9 ${inp(errors.confirm_password)}`}
+                          className={`pl-9 ${inp(errors.confirm_password)}`} style={{ paddingLeft: '36px' }}
                         />
                       </div>
                       {errors.confirm_password && (
@@ -491,7 +492,7 @@ const Register = () => {
                                bg-gradient-to-r from-[#0052FF] to-[#7C3AED]
                                shadow-[0_0_20px_rgba(0,82,255,0.25)]
                                hover:shadow-[0_0_30px_rgba(0,82,255,0.4)]
-                               transition-all duration-300"
+                               transition-all duration-300 rounding"
                   >
                     Continue <ChevronRight size={16} />
                   </motion.button>
