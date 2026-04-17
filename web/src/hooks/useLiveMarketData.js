@@ -6,49 +6,77 @@ const useLiveMarketData = () => {
   const updateTicks = useMarketStore((s) => s.updateTicks);
   const setMarketStatus = useMarketStore((s) => s.setMarketStatus);
 
-  const buffer = useRef([]);
+  // 🔥 Buffer for throttling
+  const buffer = useRef({});
+  const lastUpdate = useRef(0);
 
   useEffect(() => {
     const socket = getSocket();
 
-    // ✅ CONNECT
+    // ================================
+    // CONNECT
+    // ================================
     socket.on('connect', () => {
       console.log('✅ Connected to socket:', socket.id);
     });
 
-    // ✅ RECEIVE TICKS (ONLY ONCE)
+    // ================================
+    // RECEIVE TICKS
+    // ================================
     socket.on('ticks', (data) => {
-      console.log('📥 RECEIVED TICKS:', data);
-
       if (!data || !Array.isArray(data)) {
         console.log('⚠️ Invalid ticks received');
         return;
       }
 
-      buffer.current = data;
+      console.log('📥 RAW TICKS:', data);
+
+      // 🔥 Normalize & merge ticks
+      data.forEach((tick) => {
+        if (!tick.symbol || tick.price == null) return;
+
+        buffer.current[tick.symbol] = {
+          symbol: tick.symbol,
+          price: Number(tick.price),
+          timestamp: tick.timestamp || Date.now(),
+        };
+      });
     });
 
-    // ✅ RECEIVE MARKET STATUS (FIXED)
+    // ================================
+    // MARKET STATUS
+    // ================================
     socket.on('market_status', (data) => {
-      console.log('📡 MARKET STATUS:', data);
-
       if (!data) return;
 
-      setMarketStatus(data); // ✅ FIX: send full object, not data.open
+      console.log('📡 MARKET STATUS:', data);
+      setMarketStatus(data);
     });
 
-    // ✅ THROTTLE UI UPDATES
+    // ================================
+    // THROTTLED STORE UPDATE
+    // ================================
     const interval = setInterval(() => {
-      if (buffer.current && buffer.current.length > 0) {
-        console.log('🚀 SENDING TO STORE:', buffer.current);
+      const now = Date.now();
 
-        updateTicks(buffer.current);
+      // ⚡ Avoid unnecessary updates
+      if (Object.keys(buffer.current).length === 0) return;
+      if (now - lastUpdate.current < 100) return;
 
-        buffer.current = [];
-      }
-    }, 150);
+      const ticksArray = Object.values(buffer.current);
 
-    // ✅ CLEANUP
+      console.log('🚀 PUSHING TO STORE:', ticksArray);
+
+      updateTicks(ticksArray);
+
+      buffer.current = {};
+      lastUpdate.current = now;
+
+    }, 100); // 🔥 smoother updates
+
+    // ================================
+    // CLEANUP
+    // ================================
     return () => {
       socket.off('connect');
       socket.off('ticks');
