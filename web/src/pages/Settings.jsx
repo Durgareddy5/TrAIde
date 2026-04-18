@@ -77,7 +77,7 @@ const Settings = () => {
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
-      <div>
+      <div style={{marginBottom: '0.5rem'}}>
         <h1 className="text-2xl font-heading font-bold text-[var(--text-primary)]">
           Settings
         </h1>
@@ -90,17 +90,18 @@ const Settings = () => {
         {/* Tabs */}
         <div className="lg:w-56 flex-shrink-0">
           <div className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                          rounded-2xl p-2">
+                          rounded-md p-2" style={{padding: '0.25rem'}}>
             {SETTING_TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl
+                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg
                            text-sm font-medium transition-all duration-200 mb-0.5
                            ${activeTab === tab.key
                              ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]'
                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
                            }`}
+                style={{marginBottom: '0.25rem',padding: '0.25rem'}}
               >
                 <tab.icon size={18} />
                 {tab.label}
@@ -112,7 +113,7 @@ const Settings = () => {
         {/* Content */}
         <div className="flex-1 bg-[var(--bg-card)]
                         border border-[var(--border-primary)]
-                        rounded-2xl p-6">
+                        rounded-md p-6" style={{padding: '0.25rem'}}>
 
           {/* ── Profile ── */}
           {activeTab === 'profile' && (
@@ -162,30 +163,33 @@ const Settings = () => {
               <FieldGroup label="Email Address">
                 <div className="relative">
                   <Mail size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2
+                    className="absolute left-2 top-1/2 -translate-y-1/2
                                text-[var(--text-tertiary)]" />
                   <input {...register('email')} type="email"
-                    className={`${inp} pl-9`} />
+                    className={`${inp} pl-9`} 
+                    style={{marginLeft: '0', width:'100%', paddingLeft: '2rem', paddingRight: '2rem'}}/>
                 </div>
               </FieldGroup>
 
               <FieldGroup label="Phone Number">
                 <div className="relative">
                   <Phone size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2
+                    className="absolute left-2 top-1/2 -translate-y-1/2
                                text-[var(--text-tertiary)]" />
                   <input {...register('phone')}
-                    className={`${inp} pl-9`} placeholder="+91 98765 43210" />
+                    className={`${inp} pl-9`} placeholder="+91 98765 43210"
+                    style={{marginLeft: '0', width:'100%', paddingLeft: '2rem', paddingRight: '2rem'}} />
                 </div>
               </FieldGroup>
 
               <FieldGroup label="Organization Name">
                 <div className="relative">
                   <Building2 size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2
+                    className="absolute left-2 top-1/2 -translate-y-1/2
                                text-[var(--text-tertiary)]" />
                   <input {...register('organization_name')}
-                    className={`${inp} pl-9`} />
+                    className={`${inp} pl-9`}
+                    style={{marginLeft: '0', width:'100%', paddingLeft: '2rem', paddingRight: '2rem'}} />
                 </div>
               </FieldGroup>
 
@@ -200,12 +204,13 @@ const Settings = () => {
                   disabled={saving}
                   whileHover={{ scale: saving ? 1 : 1.02 }}
                   whileTap={{ scale: saving ? 1 : 0.98 }}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg
                              text-sm font-semibold text-white
                              bg-gradient-to-r from-[#0052FF] to-[#7C3AED]
                              disabled:opacity-60 disabled:cursor-not-allowed
                              shadow-[0_0_20px_rgba(0,82,255,0.2)]
                              transition-all duration-200"
+                  style={{padding: '0.25rem'}}
                 >
                   <Save size={16} />
                   {saving ? 'Saving...' : 'Save Changes'}
@@ -240,8 +245,9 @@ const Settings = () => {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
-                  className="flex items-start justify-between p-4 rounded-xl
+                  className="flex items-start justify-between p-4 rounded-md
                              bg-[var(--bg-tertiary)] border border-[var(--border-primary)]"
+                  style={{padding: '0.25rem'}}
                 >
                   <div>
                     <p className="text-sm font-medium text-[var(--text-primary)]">
@@ -277,8 +283,8 @@ const Settings = () => {
               />
 
               {/* Change Password */}
-              <div className="p-5 rounded-xl bg-[var(--bg-tertiary)]
-                              border border-[var(--border-primary)]">
+              <div className="p-5 rounded-lg bg-[var(--bg-tertiary)]
+                              border border-[var(--border-primary)]" style={{padding: '0.25rem',marginBottom: '0.25rem'}}>
                 <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-4
                                flex items-center gap-2">
                   <Lock size={16} className="text-[var(--accent-primary)]" />
@@ -295,6 +301,7 @@ const Settings = () => {
                           : 'Confirm new password'
                         }
                         className={`${inp} pr-10`}
+                        style={{marginLeft: '0', width:'100%', paddingLeft: '1rem', paddingRight: '2.5rem',marginBottom: '0.25rem'}}
                       />
                       <button
                         type="button"
@@ -311,11 +318,12 @@ const Settings = () => {
                   ))}
                   <button
                     onClick={() => toast.success('Password updated successfully!')}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg
                                text-sm font-semibold text-white
                                bg-[var(--accent-primary)]
                                hover:bg-[var(--accent-primary-hover)]
                                transition-all duration-200"
+                    style={{padding: '0.25rem',marginTop: '0.25rem'}}
                   >
                     <Save size={16} /> Update Password
                   </button>
@@ -333,8 +341,8 @@ const Settings = () => {
                     value: 'Active & Secure' },
                 ].map((item) => (
                   <div key={item.label}
-                       className="p-4 rounded-xl bg-[var(--bg-tertiary)]
-                                  border border-[var(--border-primary)]">
+                       className="p-4 rounded-md bg-[var(--bg-tertiary)]
+                                  border border-[var(--border-primary)]" style={{padding: '0.25rem'}}>
                     <div className={`flex items-center gap-2 ${item.color} mb-2`}>
                       <item.icon size={16} />
                       <span className="text-xs font-semibold uppercase tracking-wider">
@@ -357,8 +365,8 @@ const Settings = () => {
               />
 
               {/* Theme */}
-              <div className="flex items-center justify-between p-4 rounded-xl
-                              bg-[var(--bg-tertiary)] border border-[var(--border-primary)]">
+              <div className="flex items-center justify-between p-4 rounded-lg
+                              bg-[var(--bg-tertiary)] border border-[var(--border-primary)]" style={{padding: '0.25rem',marginBottom: '0.25rem'}}>
                 <div className="flex items-center gap-3">
                   {theme === 'dark'
                     ? <Moon size={20} className="text-[var(--accent-primary)]" />
@@ -376,8 +384,8 @@ const Settings = () => {
               </div>
 
               {/* Exchange */}
-              <div className="p-4 rounded-xl bg-[var(--bg-tertiary)]
-                              border border-[var(--border-primary)]">
+              <div className="p-4 rounded-lg bg-[var(--bg-tertiary)]
+                              border border-[var(--border-primary)]" style={{padding: '0.25rem',marginBottom: '0.25rem'}}>
                 <p className="text-sm font-medium text-[var(--text-primary)] mb-2">
                   Default Exchange
                 </p>
@@ -391,6 +399,7 @@ const Settings = () => {
                                  ${ex === 'NSE'
                                    ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/30'
                                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'}`}
+                      style={{padding: '0.25rem'}}
                     >
                       {ex}
                     </button>
@@ -399,8 +408,8 @@ const Settings = () => {
               </div>
 
               {/* Product type */}
-              <div className="p-4 rounded-xl bg-[var(--bg-tertiary)]
-                              border border-[var(--border-primary)]">
+              <div className="p-4 rounded-md bg-[var(--bg-tertiary)]
+                              border border-[var(--border-primary)]" style={{padding: '0.25rem'}}>
                 <p className="text-sm font-medium text-[var(--text-primary)] mb-2">
                   Default Product Type
                 </p>
@@ -414,6 +423,7 @@ const Settings = () => {
                                  ${pt === 'CNC'
                                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
                                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'}`}
+                      style={{padding: '0.25rem'}}
                     >
                       {pt}
                     </button>

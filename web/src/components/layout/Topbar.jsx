@@ -11,11 +11,19 @@ import useMarketStore from '@/store/marketStore';
 import { useNavigate } from 'react-router-dom';
 import { TOPBAR_H } from './DashboardLayout';  // ← shared constant
 
+// Sidebar widths — keep in sync with DashboardLayout / Sidebar
+const SIDEBAR_EXPANDED_W  = 256; // 16rem / w-64
+const SIDEBAR_COLLAPSED_W = 72;  // 4.5rem / w-[72px]
+
+// Must match the sidebar's own collapse transition (duration + easing).
+// Change here if you update the sidebar animation.
+const SIDEBAR_TRANSITION = 'left 300ms cubic-bezier(0.4, 0, 0.2, 1)';
+
 const Topbar = ({ sidebarCollapsed }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const marketStatus = useMarketStore((s) => s.marketStatus) || {};
-  const [showSearch, setShowSearch] = useState(false);
+  const [showSearch, setShowSearch]   = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef  = useRef(null);
@@ -25,7 +33,7 @@ const Topbar = ({ sidebarCollapsed }) => {
 
   console.log('🎯 UI TICKS:', ticks);
 
-  // Close dropdowns on outside click
+  // Close profile dropdown on outside click
   useEffect(() => {
     const handleClick = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
@@ -58,23 +66,34 @@ const Topbar = ({ sidebarCollapsed }) => {
     navigate('/login');
   };
 
+  // Explicit left + width — both driven by the same offset so the bar always
+  // fills 100vw minus the sidebar, with no dependency on `right: 0` (which can
+  // be overridden by Tailwind reset or a parent transform).
+  const leftOffset = sidebarCollapsed ? SIDEBAR_COLLAPSED_W : SIDEBAR_EXPANDED_W;
+
   return (
     /*
       z-30 keeps the topbar above the ticker (z-20) and content,
       but below the sidebar (z-40) and the search modal (z-50).
       Height is set via the shared TOPBAR_H constant (64 px / h-16).
+
+      Width is computed as `calc(100vw - leftOffset)` rather than relying on
+      `right: 0`, because `right` can be defeated by a parent overflow or
+      transform. Computing width explicitly guarantees the bar always stretches
+      edge-to-edge regardless of what the sidebar does.
     */
     <header
       className={cn(
-        'fixed top-0 right-0 z-30',
+        'fixed top-0 z-30',
         'bg-[var(--bg-secondary)]/80 backdrop-blur-xl',
         'border-b border-[var(--border-primary)]',
         'flex items-center justify-between px-6',
-        'transition-all duration-300',
       )}
       style={{
-        left:   sidebarCollapsed ? 72 : 256,
-        height: TOPBAR_H,
+        height:     TOPBAR_H,
+        left:       leftOffset,
+        width:      `calc(100vw - ${leftOffset}px)`,
+        transition: SIDEBAR_TRANSITION,
       }}
     >
       {/* ─── Left: Search ─────────────────────────── */}
@@ -188,8 +207,8 @@ const Topbar = ({ sidebarCollapsed }) => {
                 {/* Menu Items */}
                 <div className="py-1">
                   {[
-                    { icon: User,         label: 'My Profile', path: '/settings' },
-                    { icon: SettingsIcon, label: 'Settings',   path: '/settings' },
+                    { icon: User,         label: 'My Profile',    path: '/settings' },
+                    { icon: SettingsIcon, label: 'Settings',      path: '/settings' },
                     { icon: HelpCircle,   label: 'Help & Support', path: '/help' },
                   ].map((item) => (
                     <button

@@ -131,9 +131,10 @@ const Funds = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
-              className="relative rounded-2xl p-6 overflow-hidden
+              className="relative rounded-md p-6 overflow-hidden
                          bg-gradient-to-br from-[#0052FF]/15 to-[#7C3AED]/10
                          border border-[#0052FF]/20"
+              style={{padding: '0.25rem',marginTop: '0.5rem',marginBottom: '0.5rem'}}
             >
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full
                               bg-[#0052FF] opacity-5 blur-2xl -translate-y-1/2
@@ -159,8 +160,9 @@ const Funds = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="rounded-2xl p-6 bg-[var(--bg-card)]
+              className="rounded-md p-6 bg-[var(--bg-card)]
                          border border-[var(--border-primary)]"
+              style={{padding: '0.25rem',marginTop: '0.5rem', marginBottom: '0.5rem'}}
             >
               <div className="flex items-center gap-2 mb-3">
                 <IndianRupee size={18} className="text-[var(--warning)]" />
@@ -198,8 +200,9 @@ const Funds = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="rounded-2xl p-6 bg-[var(--bg-card)]
+              className="rounded-md p-6 bg-[var(--bg-card)]
                          border border-[var(--border-primary)]"
+              style={{padding: '0.25rem',marginTop: '0.5rem',marginBottom: '0.5rem'}}
             >
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp size={18} className="text-[var(--profit)]" />
@@ -232,16 +235,17 @@ const Funds = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
+      <div className="flex gap-3" style={{marginBottom: '0.5rem'}}>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setActiveAction(activeAction === 'deposit' ? null : 'deposit')}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl
+          className="flex items-center gap-2 px-6 py-3 rounded-lg
                      font-semibold text-sm text-white
                      bg-[var(--profit)] hover:brightness-110
                      shadow-[0_0_20px_rgba(0,230,118,0.2)]
                      transition-all duration-200"
+          style={{padding: '0.25rem'}}
         >
           <ArrowUpCircle size={18} /> Add Funds
         </motion.button>
@@ -249,11 +253,12 @@ const Funds = () => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setActiveAction(activeAction === 'withdraw' ? null : 'withdraw')}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl
+          className="flex items-center gap-2 px-6 py-3 rounded-lg
                      font-semibold text-sm text-[var(--text-primary)]
                      bg-[var(--bg-card)] border border-[var(--border-primary)]
                      hover:border-[var(--border-secondary)]
                      transition-all duration-200"
+          style={{padding: '0.25rem'}}
         >
           <ArrowDownCircle size={18} /> Withdraw
         </motion.button>
@@ -269,9 +274,9 @@ const Funds = () => {
             className="overflow-hidden"
           >
             <div className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                            rounded-2xl p-6">
+                            rounded-md p-6" style={{padding: '0.25rem',marginBottom: '0.5rem'}}>
               <h3 className="text-base font-heading font-semibold
-                             text-[var(--text-primary)] mb-4">
+                             text-[var(--text-primary)] mb-4" style={{marginBottom: '0.5rem'}}>
                 {activeAction === 'deposit' ? '💰 Add Virtual Funds' : '💸 Withdraw Funds'}
               </h3>
 
@@ -286,15 +291,16 @@ const Funds = () => {
                                ${amount === String(a)
                                  ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
                                  : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border-[var(--border-primary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]'}`}
+                    style={{marginBottom: '0.5rem'}}
                   >
                     {formatINR(a, { compact: true })}
                   </button>
                 ))}
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3" style={{marginBottom: '0.5rem'}}>
                 <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2
                                    text-sm font-semibold text-[var(--text-tertiary)]">
                     ₹
                   </span>
@@ -310,6 +316,7 @@ const Funds = () => {
                                focus:outline-none focus:border-[var(--accent-primary)]
                                focus:ring-2 focus:ring-[var(--accent-primary)]/20
                                transition-all duration-200"
+                    style={{marginLeft: '0', width:'100%', paddingLeft: '2rem', paddingRight: '2rem'}}
                   />
                 </div>
                 <motion.button
@@ -317,18 +324,19 @@ const Funds = () => {
                   whileTap={{ scale: submitting ? 1 : 0.98 }}
                   onClick={handleAction}
                   disabled={submitting}
-                  className={`px-6 py-3 rounded-xl font-semibold text-sm
+                  className={`px-6 py-3 rounded-lg font-semibold text-sm
                              disabled:opacity-60 disabled:cursor-not-allowed
                              transition-all duration-200
                              ${activeAction === 'deposit'
                                ? 'bg-[var(--profit)] text-[#09090b]'
                                : 'bg-[var(--loss)] text-white'}`}
+                  style={{padding: '0.25rem'}}
                 >
                   {submitting ? 'Processing...' : 'Confirm'}
                 </motion.button>
                 <button
                   onClick={() => { setActiveAction(null); setAmount(''); }}
-                  className="p-3 rounded-xl bg-[var(--bg-tertiary)]
+                  className="p-3 rounded-3xl bg-[var(--bg-tertiary)]
                              text-[var(--text-tertiary)]
                              hover:text-[var(--text-primary)]
                              border border-[var(--border-primary)]
@@ -348,7 +356,7 @@ const Funds = () => {
 
       {/* Transaction History */}
       <div className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                      rounded-2xl overflow-hidden">
+                      rounded-md overflow-hidden" style={{padding: '0.25rem'}}>
         <div className="px-5 py-4 border-b border-[var(--border-primary)]">
           <h2 className="text-sm font-heading font-semibold
                          text-[var(--text-primary)]">
@@ -420,12 +428,12 @@ const Funds = () => {
                           {formatINR(tx.amount)}
                         </td>
                         <td className="px-5 py-3 text-right text-sm font-mono
-                                       text-[var(--text-primary)]">
+                                       text-[var(--text-primary)]" >
                           {formatINR(tx.balance_after)}
                         </td>
                         <td className="px-5 py-3">
                           <span className="flex items-center gap-1 text-xs
-                                           text-[var(--profit)]">
+                                           text-[var(--profit)]" style={{marginLeft: '0.25rem'}}>
                             <CheckCircle2 size={12} />
                             {tx.status}
                           </span>

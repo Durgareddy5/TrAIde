@@ -94,15 +94,16 @@ const Analytics = () => {
 
         {/* Period selector */}
         <div className="flex gap-1.5 bg-[var(--bg-card)]
-                        border border-[var(--border-primary)] rounded-xl p-1">
+                        border border-[var(--border-primary)] rounded-lg p-1" style={{padding: '0.25rem'}}>
           {PERIODS.map((p) => (
             <button key={p}
               onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold
                          transition-all duration-200
                          ${period === p
                            ? 'bg-[var(--accent-primary)] text-white'
-                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
+                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+              style={{padding: '0.1rem'}}>
               {p}
             </button>
           ))}
@@ -110,10 +111,10 @@ const Analytics = () => {
       </div>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" style={{marginTop: '0.5rem',marginBottom: '0.5rem'}}>
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 rounded-2xl"/>
+              <Skeleton key={i} className="h-28 rounded-md"/>
             ))
           : [
               { label:'Total P&L',   value: formatINR(totalPnL, { compact:true }),
@@ -133,10 +134,11 @@ const Analytics = () => {
                 initial={{ opacity:0, y:20 }}
                 animate={{ opacity:1, y:0 }}
                 transition={{ delay: i * 0.08 }}
-                className={`rounded-2xl p-5 border
+                className={`rounded-md p-5 border
                             ${kpi.up
                               ? 'bg-gradient-to-br from-green-500/8 border-green-500/20'
                               : 'bg-gradient-to-br from-red-500/8 border-red-500/20'}`}
+                style={{padding: '0.25rem'}}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <kpi.icon size={16}
@@ -156,7 +158,7 @@ const Analytics = () => {
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 xl:grid-cols-3 gap-6" style={{marginBottom: '0.5rem'}}>
 
         {/* Monthly P&L bar chart */}
         <motion.div
@@ -164,7 +166,8 @@ const Analytics = () => {
           animate={{ opacity:1, y:0 }}
           transition={{ delay:0.3 }}
           className="xl:col-span-2 bg-[var(--bg-card)]
-                     border border-[var(--border-primary)] rounded-2xl p-5"
+                     border border-[var(--border-primary)] rounded-md p-5"
+          style={{padding: '0.25rem'}}
         >
           <h2 className="text-sm font-heading font-semibold
                          text-[var(--text-primary)] mb-5">
@@ -206,7 +209,8 @@ const Analytics = () => {
           animate={{ opacity:1, y:0 }}
           transition={{ delay:0.35 }}
           className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                     rounded-2xl p-5"
+                     rounded-md p-5"
+          style={{padding: '0.5rem'}}
         >
           <h2 className="text-sm font-heading font-semibold
                          text-[var(--text-primary)] mb-5">
@@ -260,7 +264,8 @@ const Analytics = () => {
           animate={{ opacity:1, y:0 }}
           transition={{ delay:0.4 }}
           className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                     rounded-2xl p-5"
+                     rounded-md p-5"
+          style={{padding: '0.25rem'}}
         >
           <h2 className="text-sm font-heading font-semibold
                          text-[var(--text-primary)] mb-5">
@@ -269,7 +274,7 @@ const Analytics = () => {
           {loading || !winRate ? <Skeleton className="h-44 rounded-xl"/> : (
             <div className="space-y-5">
               {/* Ratio bar */}
-              <div>
+              <div style={{marginBottom: '0.5rem'}}>
                 <div className="flex justify-between text-xs mb-2">
                   <span className="text-[var(--profit)] font-semibold">
                     {winRate.winning}% Win
@@ -295,8 +300,8 @@ const Analytics = () => {
                   { label:'Loss Streak', value: `${winRate.lossStreak} trades`,up:false },
                 ].map(({ label, value, up }) => (
                   <div key={label}
-                       className="p-3 rounded-xl bg-[var(--bg-tertiary)]
-                                  border border-[var(--border-primary)]">
+                       className="p-3 rounded-md bg-[var(--bg-tertiary)]
+                                  border border-[var(--border-primary)]" style={{padding: '0.25rem'}}>
                     <p className="text-[10px] text-[var(--text-tertiary)]
                                   uppercase tracking-wider mb-1">{label}</p>
                     <p className={`text-sm font-mono font-semibold
@@ -316,7 +321,8 @@ const Analytics = () => {
           animate={{ opacity:1, y:0 }}
           transition={{ delay:0.45 }}
           className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                     rounded-2xl overflow-hidden"
+                     rounded-md overflow-hidden"
+          style={{padding: '0.25rem'}}
         >
           <div className="px-5 py-4 border-b border-[var(--border-primary)]">
             <h2 className="text-sm font-heading font-semibold

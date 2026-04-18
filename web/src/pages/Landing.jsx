@@ -156,20 +156,18 @@ const Landing = () => {
 
       {/* ─── Navigation ─────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-[var(--glass-border)] fixed_1">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-16 grid grid-cols-[1fr_auto_1fr] items-center solved">
+
+          {/* LEFT */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-3xl flex items-center justify-center shadow-[0_0_20px_rgba(0,82,255,0.3)]">
-              <img 
-                src={TrAIdeUrl} 
-                alt="TrAIde"
-              />
+              <img src={TrAIdeUrl} alt="TrAIde" />
             </div>
-            <div>
-              <span className="text-lg font-heading font-bold gradient-text">TrAIde</span>
-            </div>
+            <span className="text-lg font-heading font-bold gradient-text">TrAIde</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8">
+          {/* CENTER */}
+          <div className="hidden md:flex items-center justify-center gap-8">
             {['Features', 'Markets', 'Analytics', 'Enterprise'].map((item) => (
               <a
                 key={item}
@@ -181,16 +179,18 @@ const Landing = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* RIGHT */}
+          <div className="flex items-center justify-end gap-3">
             <Link to="/login">
               <Button variant="ghost" size="sm">Sign In</Button>
             </Link>
             <Link to="/register">
               <Button variant="gradient" size="sm" iconRight={ArrowRight} className="rounded">
-                <span style={{"marginLeft" : "4px"}}>Get Started</span>
+                <span className="ml-1">Get Started</span>
               </Button>
             </Link>
           </div>
+
         </div>
       </nav>
 

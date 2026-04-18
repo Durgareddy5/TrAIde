@@ -291,16 +291,16 @@ const Orders = () => {
 
       {/* Tabs + Search */}
       <div className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                      rounded-2xl overflow-hidden">
+                      rounded-md overflow-hidden" style={{padding: '0.25rem'}}>
         {/* Tabs */}
-        <div className="flex items-center gap-1 px-4 py-3
+        <div className="flex items-center gap-4 px-4 py-3
                         border-b border-[var(--border-primary)]
-                        overflow-x-auto scrollbar-none">
+                        overflow-x-auto scrollbar-none" style={{marginBottom: '1rem'}}>
           {TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md
                          text-sm font-medium whitespace-nowrap transition-all duration-200
                          ${activeTab === tab.key
                            ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]'
@@ -320,7 +320,7 @@ const Orders = () => {
           {/* Search */}
           <div className="ml-auto relative flex-shrink-0">
             <Search size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2
+              className="absolute left-2 top-1/2 -translate-y-1/2
                          text-[var(--text-tertiary)]" />
             <input
               value={searchQ}
@@ -331,6 +331,7 @@ const Orders = () => {
                          text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]
                          focus:outline-none focus:border-[var(--accent-primary)]
                          w-44 transition-all duration-200"
+              style={{marginLeft: '0', width:'100%', paddingLeft: '2rem', paddingRight: '2rem'}}
             />
           </div>
         </div>

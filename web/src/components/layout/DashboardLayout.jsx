@@ -49,7 +49,7 @@ const DashboardLayout = () => {
         <div
           className="fixed z-20 right-0 transition-all duration-300"
           style={{
-            top:    TOPBAR_H,
+            top:    54,
             left:   sidebarW,
             height: TICKER_H,
           }}
@@ -65,7 +65,7 @@ const DashboardLayout = () => {
         */}
         <main
           className="pb-8 px-6 min-h-screen"
-          style={{ paddingTop: HEADER_H }}
+          style={{ paddingTop: HEADER_H,paddingLeft: 10, paddingRight: 10,paddingBottom: 20 }}
         >
           <Outlet />
         </main>

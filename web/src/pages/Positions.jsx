@@ -121,6 +121,7 @@ const PositionRow = ({ pos, onSquareOff, delay }) => {
                      text-xs font-semibold text-[var(--text-secondary)]
                      hover:border-[var(--loss)]/50 hover:text-[var(--loss)]
                      hover:bg-[var(--loss-bg)] transition-all duration-200"
+          style={{marginLeft: '1.5rem'}}
         >
           <Square size={12}/> Square Off
         </motion.button>
@@ -228,9 +229,10 @@ const Positions = () => {
             <motion.button
               whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
               onClick={handleSquareOffAll}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg
                          bg-[var(--loss)] text-white text-sm font-semibold
                          shadow-[0_0_15px_rgba(255,23,68,0.2)]"
+              style={{padding: '0.25rem'}}
             >
               <Square size={16}/> Square Off All
             </motion.button>
@@ -267,8 +269,9 @@ const Positions = () => {
               initial={{ opacity:0, y:20 }}
               animate={{ opacity:1, y:0 }}
               transition={{ delay: i * 0.08 }}
-              className={`rounded-xl p-5 border bg-gradient-to-br
+              className={`rounded-md p-5 border bg-gradient-to-br
                           ${colorMap[card.color]}`}
+              style={{padding: '0.25rem',marginBottom: '1rem',marginTop: '1rem'}}
             >
               <div className="flex items-center gap-2 mb-2">
                 <card.icon size={16}/>
@@ -283,8 +286,9 @@ const Positions = () => {
       </div>
 
       {/* MIS Warning */}
-      <div className="flex items-start gap-3 p-4 rounded-xl
-                      bg-amber-500/5 border border-amber-500/20">
+      <div className="flex items-start gap-3 p-4 rounded-md
+                      bg-amber-500/5 border border-amber-500/20"
+                      style={{marginBottom: '1rem',padding: '0.25rem'}}>
         <AlertTriangle size={18} className="text-amber-400 flex-shrink-0 mt-0.5"/>
         <div>
           <p className="text-sm font-semibold text-amber-400">
@@ -300,7 +304,8 @@ const Positions = () => {
 
       {/* Positions Table */}
       <div className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                      rounded-2xl overflow-hidden">
+                      rounded-md overflow-hidden"
+            style={{padding: '0.25rem'}}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

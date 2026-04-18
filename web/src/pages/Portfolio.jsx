@@ -276,7 +276,7 @@ const fetchHoldings = async () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" style={{marginBottom: '1rem'}}>
         {[
           { title: 'Invested',       value: formatINR(totalInvested, { compact: true }),
             icon: Briefcase,         color: 'bg-blue-500/10 text-blue-400   border-blue-500/20' },
@@ -301,7 +301,8 @@ const fetchHoldings = async () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
-            className={`rounded-xl p-4 border ${card.color} bg-transparent`}
+            className={`rounded-md p-4 border ${card.color} bg-transparent`}
+            style={{padding: '0.25rem'}}
           >
             <div className="flex items-center gap-2 mb-2">
               <card.icon size={16} />
@@ -326,7 +327,9 @@ const fetchHoldings = async () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="xl:col-span-1 bg-[var(--bg-card)]
-                     border border-[var(--border-primary)] rounded-2xl p-5"
+                     border border-[var(--border-primary)] rounded-md p-5"
+          style={{padding: '0.25rem'}}
+          
         >
           <h2 className="text-sm font-heading font-semibold
                          text-[var(--text-primary)] mb-4 flex items-center gap-2">
@@ -392,7 +395,8 @@ const fetchHoldings = async () => {
           transition={{ delay: 0.35 }}
           className="xl:col-span-3 bg-[var(--bg-card)]
                      border border-[var(--border-primary)]
-                     rounded-2xl overflow-hidden"
+                     rounded-md overflow-hidden"
+          style={{padding: '0.25rem'}}
         >
           {/* Table toolbar */}
           <div className="flex items-center justify-between gap-3
@@ -404,7 +408,7 @@ const fetchHoldings = async () => {
             <div className="flex items-center gap-2 ml-auto">
               <div className="relative">
                 <Search size={14}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2
+                  className="absolute left-2 top-1/2 -translate-y-1/2
                              text-[var(--text-tertiary)]" />
                 <input
                   value={search}
@@ -415,6 +419,7 @@ const fetchHoldings = async () => {
                              text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]
                              focus:outline-none focus:border-[var(--accent-primary)]
                              w-36 transition-all duration-200"
+                  style={{marginLeft: '0', width:'100%', paddingLeft: '2rem', paddingRight: '2rem'}}
                 />
               </div>
               <select
