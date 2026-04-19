@@ -15,7 +15,7 @@ import './Landing.css';
 
 // Animated Background Mesh
 const GradientMesh = () => (
-  <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+  <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
     <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-[radial-gradient(ellipse_at_top_left,rgba(0,82,255,0.15)_0%,transparent_50%)]" />
     <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,rgba(124,58,237,0.12)_0%,transparent_50%)]" />
     <div className="absolute top-1/4 left-1/2 w-96 h-96 bg-[#0052FF] rounded-full opacity-[0.03] blur-[100px] animate-pulse" />
@@ -278,67 +278,102 @@ const Landing = () => {
           <motion.div
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="relative mt-16 max-w-4xl mx-auto"
+            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+            className="relative z-10 mt-16 max-w-4xl mx-auto"
           >
-            <div className="relative rounded-2xl overflow-hidden border border-[var(--border-primary)] shadow-[0_25px_80px_-12px_rgba(0,82,255,0.2)]">
-              {/* Mock Dashboard Screenshot */}
-              <div className="aspect-video bg-[var(--bg-secondary)] p-4">
-                {/* Top bar mock */}
-                <div className="flex items-center gap-2 mb-3">
+            <div className="relative rounded-md overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-[0_25px_80px_-12px_rgba(0,82,255,0.25)] p-2">
+
+              {/* Dashboard */}
+              <div className="aspect-video p-4">
+
+                {/* Top bar */}
+                <div className="flex items-center gap-2 mb-2">
                   <div className="flex gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
                     <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
                     <div className="w-3 h-3 rounded-full bg-[#28C840]" />
                   </div>
-                  <div className="flex-1 h-6 rounded bg-[var(--bg-tertiary)] mx-16" />
+                  <div className="flex-1 text-center text-xs text-white/60">
+                    Dashboard Overview
+                  </div>
                 </div>
 
-                {/* Mock dashboard grid */}
+                {/* Stats cards */}
                 <div className="grid grid-cols-4 gap-3 mb-3">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] p-3">
-                      <div className="h-3 w-16 rounded bg-[var(--bg-tertiary)] mb-2 shimmer" />
-                      <div className="h-6 w-24 rounded bg-[var(--bg-tertiary)] mb-1 shimmer" />
-                      <div className="h-2 w-12 rounded bg-[var(--profit-bg)] shimmer" />
+                  {[
+                    { title: "Revenue", value: "$12,430", change: "+8%" },
+                    { title: "Users", value: "2,340", change: "+12%" },
+                    { title: "Orders", value: "1,120", change: "+5%" },
+                    { title: "Growth", value: "18%", change: "+3%" },
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      className="rounded-md bg-white/[0.04] border border-white/10 p-3 backdrop-blur-md"
+                    >
+                      <p className="text-xs text-white/60">{item.title}</p>
+                      <h3 className="text-lg font-semibold text-white">
+                        {item.value}
+                      </h3>
+                      <span className="text-xs text-green-400">
+                        {item.change}
+                      </span>
                     </div>
                   ))}
                 </div>
 
-                {/* Mock chart area */}
+                {/* Charts section */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] p-3 h-44">
-                    <div className="h-3 w-20 rounded bg-[var(--bg-tertiary)] mb-3 shimmer" />
+
+                  {/* Main chart */}
+                  <div className="col-span-2 rounded-md bg-white/[0.04] border border-white/10 p-3 h-44 backdrop-blur-md">
+                    <p className="text-xs text-white/60 mb-2">
+                      Revenue Trend
+                    </p>
+
                     <svg viewBox="0 0 400 120" className="w-full h-28">
                       <defs>
                         <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor="#0052FF" stopOpacity="0.3" />
+                          <stop offset="0%" stopColor="#0052FF" stopOpacity="0.35" />
                           <stop offset="100%" stopColor="#0052FF" stopOpacity="0" />
                         </linearGradient>
                       </defs>
+
                       <path
                         d="M0,90 Q50,85 80,70 T160,55 Q190,60 220,40 T300,35 Q330,30 360,20 L400,15 L400,120 L0,120 Z"
                         fill="url(#chartGradient)"
                       />
+
                       <path
                         d="M0,90 Q50,85 80,70 T160,55 Q190,60 220,40 T300,35 Q330,30 360,20 L400,15"
                         fill="none"
-                        stroke="#0052FF"
+                        stroke="#3B82F6"
                         strokeWidth="2"
                       />
                     </svg>
                   </div>
-                  <div className="rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] p-3">
-                    <div className="h-3 w-16 rounded bg-[var(--bg-tertiary)] mb-3 shimmer" />
-                    <div className="space-y-2">
-                      {[...Array(5)].map((_, i) => (
-                        <div key={i} className="flex items-center justify-between">
-                          <div className="h-2 w-16 rounded bg-[var(--bg-tertiary)] shimmer" />
-                          <div className="h-2 w-12 rounded bg-[var(--bg-tertiary)] shimmer" />
+
+                  {/* Side stats */}
+                  <div className="rounded-md bg-white/[0.04] border border-white/10 p-3 backdrop-blur-md">
+                    <p className="text-xs text-white/60 mb-2">
+                      Top Assets
+                    </p>
+
+                    <div className="space-y-2 text-xs text-white/80">
+                      {[
+                        { name: "AAPL", value: "$189" },
+                        { name: "TSLA", value: "$250" },
+                        { name: "GOOG", value: "$135" },
+                        { name: "AMZN", value: "$145" },
+                        { name: "MSFT", value: "$310" },
+                      ].map((item, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span>{item.name}</span>
+                          <span className="text-green-400">{item.value}</span>
                         </div>
                       ))}
-                                          </div>
+                    </div>
                   </div>
+
                 </div>
               </div>
             </div>
