@@ -34,10 +34,11 @@ const SummaryCard = ({ title, value, change, changeLabel, icon: Icon,
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
-      className={`relative rounded-xl p-5 border ${c.border}
+      className={`relative rounded-md p-5 border ${c.border}
                   bg-gradient-to-br ${c.bg}
                   hover:border-opacity-40 transition-all duration-300
                   overflow-hidden group`}
+      style={{padding: '0.25rem'}}
     >
       {/* Glow on hover */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100
@@ -291,7 +292,7 @@ const Dashboard = () => {
     hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
   return (
-    <div className="space-y-6 stagger-children">
+    <div className="space-y-6 stagger-children " style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
 
       {/* ── Header ──────────────────────────────── */}
       <div className="flex items-start justify-between">
@@ -320,7 +321,7 @@ const Dashboard = () => {
           animate={{ opacity: 1 }}
           onClick={fetchData}
           disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl
+          className="flex items-center gap-2 px-4 py-2 rounded-lg
                      bg-[var(--bg-card)] border border-[var(--border-primary)]
                      text-sm text-[var(--text-secondary)]
                      hover:border-[var(--border-secondary)]
@@ -377,7 +378,7 @@ const Dashboard = () => {
       </div>
 
       {/* ── Main Content Grid ────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6" style={{borderRadius: '6px'}}>
 
         {/* ── Portfolio Chart (2/3 width) ──────── */}
         <motion.div
@@ -386,7 +387,8 @@ const Dashboard = () => {
           transition={{ delay: 0.25 }}
           className="xl:col-span-2 bg-[var(--bg-card)]
                      border border-[var(--border-primary)]
-                     rounded-2xl p-5"
+                     rounded-lg p-5"
+          style={{padding: '0.25rem'}}
         >
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -470,7 +472,8 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                     rounded-2xl p-5"
+                     rounded-lg p-5"
+          style={{padding: '0.25rem'}}
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-heading font-semibold
@@ -490,7 +493,7 @@ const Dashboard = () => {
           <div className="space-y-2">
             {loading
               ? Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 rounded-xl" />
+                  <Skeleton key={i} className="h-16 rounded-md p-1"/>
                 ))
               : indices.map((idx) => (
                   <IndexPill key={idx.name} {...idx} />
@@ -510,7 +513,8 @@ const Dashboard = () => {
           transition={{ delay: 0.35 }}
           className="xl:col-span-2 bg-[var(--bg-card)]
                      border border-[var(--border-primary)]
-                     rounded-2xl overflow-hidden"
+                     rounded-lg overflow-hidden"
+          style={{padding: '0.25rem'}}
         >
           <div className="flex items-center justify-between px-5 py-4
                           border-b border-[var(--border-primary)]">
@@ -575,13 +579,14 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.40 }}
             className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                       rounded-2xl p-5"
+                       rounded-lg p-5"
+            style={{padding: '0.25rem'}}
           >
             <h2 className="text-base font-heading font-semibold
-                           text-[var(--text-primary)] mb-4">
+                           text-[var(--text-primary)]">
               Quick Actions
             </h2>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 mb-4">
               {[
                 { label: 'Buy Stock',  icon: Plus,    color: 'bg-[#0052FF]',    path: '/markets' },
                 { label: 'Sell Stock', icon: Minus,   color: 'bg-[var(--loss)]', path: '/orders' },
@@ -609,62 +614,68 @@ const Dashboard = () => {
               ))}
             </div>
           </motion.div>
+        
+
+          
 
           {/* Open Positions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-            className="bg-[var(--bg-card)] border border-[var(--border-primary)]
-                       rounded-2xl p-5"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-heading font-semibold
-                             text-[var(--text-primary)]">
-                Open Positions
-              </h2>
-              <button
-                onClick={() => navigate('/positions')}
-                className="text-xs text-[var(--accent-primary)]
-                           hover:underline flex items-center gap-1"
-              >
-                View all <ChevronRight size={14} />
-              </button>
-            </div>
+          <div className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+              className="bg-[var(--bg-card)] border border-[var(--border-primary)]
+                        rounded-lg p-5"
+              style={{padding: '0.25rem',marginTop: '0.5rem'}}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-heading font-semibold
+                              text-[var(--text-primary)]">
+                  Open Positions
+                </h2>
+                <button
+                  onClick={() => navigate('/positions')}
+                  className="text-xs text-[var(--accent-primary)]
+                            hover:underline flex items-center gap-1"
+                >
+                  View all <ChevronRight size={14} />
+                </button>
+              </div>
 
-            {positions.length === 0 ? (
-              <div className="text-center py-6">
-                <Activity size={32} className="text-[var(--text-tertiary)]
-                                               mx-auto mb-2" />
-                <p className="text-sm text-[var(--text-tertiary)]">
-                  No open positions
-                </p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                  Place an intraday (MIS) order to see positions here
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {positions.slice(0, 3).map((p) => (
-                  <div key={p.id}
-                       className="flex items-center justify-between
-                                  p-3 rounded-xl bg-[var(--bg-tertiary)]">
-                    <div>
-                      <p className="text-sm font-semibold
-                                    text-[var(--text-primary)]">{p.symbol}</p>
-                      <p className="text-xs text-[var(--text-tertiary)]">
-                        {p.net_quantity} qty · {p.product_type}
-                      </p>
+              {positions.length === 0 ? (
+                <div className="text-center py-6">
+                  <Activity size={32} className="text-[var(--text-tertiary)]
+                                                mx-auto mb-2" />
+                  <p className="text-sm text-[var(--text-tertiary)]">
+                    No open positions
+                  </p>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                    Place an intraday (MIS) order to see positions here
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {positions.slice(0, 3).map((p) => (
+                    <div key={p.id}
+                        className="flex items-center justify-between
+                                    p-3 rounded-xl bg-[var(--bg-tertiary)]">
+                      <div>
+                        <p className="text-sm font-semibold
+                                      text-[var(--text-primary)]">{p.symbol}</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">
+                          {p.net_quantity} qty · {p.product_type}
+                        </p>
+                      </div>
+                      <div className={`text-right font-mono text-sm
+                                      font-semibold ${getPnLColor(p.unrealized_pnl)}`}>
+                        {formatINR(p.unrealized_pnl || 0)}
+                      </div>
                     </div>
-                    <div className={`text-right font-mono text-sm
-                                    font-semibold ${getPnLColor(p.unrealized_pnl)}`}>
-                      {formatINR(p.unrealized_pnl || 0)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </div>
         </div>
       </div>
 
@@ -676,6 +687,7 @@ const Dashboard = () => {
         className="flex items-center gap-3 p-4 rounded-xl
                    bg-[var(--warning)]/5
                    border border-[var(--warning)]/20"
+        style={{justifyContent: 'center'}}
       >
         <AlertCircle size={18} className="text-[var(--warning)] flex-shrink-0" />
         <p className="text-sm text-[var(--text-secondary)]">

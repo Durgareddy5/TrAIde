@@ -11,6 +11,7 @@ import {
   ArrowRight, Loader2
 } from 'lucide-react';
 
+import TrAIdeUrl from "@/assets/TrAIde_1.png";
 import './Login.css';
 
 
@@ -110,14 +111,16 @@ const Login = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-3 mb-12"
           >
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br
-                            from-[#0052FF] to-[#7C3AED] flex items-center
+            <div className="w-11 h-11 rounded-xl flex items-center
                             justify-center shadow-[0_0_30px_rgba(0,82,255,0.4)]">
-              <Zap size={22} className="text-white" />
+              <img 
+                src={TrAIdeUrl} 
+                alt="TrAIde"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-heading font-bold text-white">
-                ProTrade
+                TrAIde
               </h1>
               <p className="text-xs text-white/40 uppercase tracking-widest -mt-0.5">
                 Institutional

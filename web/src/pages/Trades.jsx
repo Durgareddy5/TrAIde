@@ -167,6 +167,7 @@ const Trades = () => {
             onClick={() => setTab(t.key)}
             className={`px-3 py-1 rounded-lg text-sm
               ${tab === t.key ? 'bg-blue-500/20 text-blue-400' : ''}`}
+            style={{padding: '0.25rem'}}
           >
             {t.label}
           </button>
@@ -178,13 +179,14 @@ const Trades = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-7 pr-3 py-1 text-sm rounded bg-[var(--bg-input)]"
+            style={{marginLeft: '0', width:'100%', paddingLeft: '2rem', paddingRight: '2rem'}}
             placeholder="Search"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-[var(--bg-card)] rounded-xl overflow-hidden">
+      <div className="bg-[var(--bg-card)] rounded-md overflow-hidden" style={{padding: '0.25rem'}}>
         <table className="w-full">
           <thead>
             <tr className="text-xs text-[var(--text-tertiary)]">

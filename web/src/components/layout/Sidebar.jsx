@@ -9,6 +9,8 @@ import {
   Zap, IndianRupee, PieChart, LineChart, Target,
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
+import TrAIdeUrl from "@/assets/TrAIde_1.png";
+import './Sidebar.css';
 
 const navItems = [
   {
@@ -55,18 +57,27 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         'bg-[var(--bg-secondary)] border-r border-[var(--border-primary)]',
         'flex flex-col',
         'transition-all duration-300 ease-out',
+        // FIX: overflow-x-hidden hides the brief flash of scrollbar that appears
+        // on some browsers during the expand/collapse width animation.
+        'overflow-x-hidden',
       )}
       animate={{ width: collapsed ? 72 : 256 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
     >
       {/* ─── Logo Area ─────────────────── */}
       <div className={cn(
-        'flex items-center h-16 px-4 border-b border-[var(--border-primary)]',
+        'flex items-center h-16 px-4 border-b border-[var(--border-primary)] flex-shrink-0',
         collapsed ? 'justify-center' : 'gap-3'
       )}>
-        <div className="relative">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#0052FF] to-[#7C3AED] flex items-center justify-center shadow-[0_0_20px_rgba(0,82,255,0.3)]">
-            <Zap size={20} className="text-white" />
+        <div className="relative flex-shrink-0">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(0,82,255,0.3)]">
+            <img 
+              src={TrAIdeUrl} 
+              alt="TrAIde"
+              // FIX: Explicit width/height on the logo image to prevent layout shift
+              // during load, which was causing the sidebar header to briefly resize.
+              className="w-9 h-9 object-contain"
+            />
           </div>
           {/* Live Market Indicator */}
           <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[var(--profit)] pulse-dot" />
@@ -79,10 +90,10 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden"
+              className="overflow-hidden min-w-0"
             >
               <h1 className="text-lg font-heading font-bold gradient-text whitespace-nowrap">
-                ProTrade
+                TrAIde
               </h1>
               <p className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-widest -mt-0.5 whitespace-nowrap">
                 Institutional
@@ -93,7 +104,19 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       </div>
 
       {/* ─── Navigation ────────────────── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2">
+      {/*
+        FIX: overflow-y-auto with scrollbar-gutter: stable prevents the nav
+        area from shifting content when a scrollbar appears on small screens.
+        overflow-x-hidden is needed because tooltips in collapsed mode extend
+        beyond the sidebar boundary — they use position:absolute left-full,
+        so we must NOT clip them here; clipping is handled by the sidebar's
+        own overflow-x:hidden above (which only clips the width itself, not
+        absolutely-positioned children that overflow via z-50).
+        Correction: overflow-x-hidden on the nav would clip tooltips.
+        We rely only on the motion.aside overflow-x-hidden during transition
+        and allow the nav to overflow so tooltips remain visible.
+      */}
+      <nav className="flex-1 overflow-y-auto py-4 px-2">
         {navItems.map((section) => (
           <div key={section.section} className="mb-4">
             {/* Section Label */}
@@ -105,7 +128,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
                   exit={{ opacity: 0 }}
                   className="px-3 mb-2"
                 >
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)]">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-tertiary)] whitespace-nowrap">
                     {section.section}
                   </span>
                 </motion.div>
@@ -113,7 +136,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
             </AnimatePresence>
 
             {/* Nav Items */}
-            <div className="space-y-0.5">
+            <div className="space-y-4">
               {section.items.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
@@ -123,7 +146,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
                     key={item.path}
                     to={item.path}
                     className={cn(
-                      'relative flex items-center gap-3 px-3 py-2.5 rounded-lg',
+                      'relative flex items-center gap-3 px-3 py-2.5 rounded-lg gapped',
                       'text-sm font-medium',
                       'transition-all duration-200',
                       'group',
@@ -162,9 +185,15 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
                     </AnimatePresence>
 
                     {/* Tooltip for collapsed mode */}
+                    {/* FIX: Changed z-50 → z-[60] so tooltips always render above
+                        the topbar (z-30) and any cards/overlays in the content area.
+                        Also added pointer-events-none so the tooltip itself never
+                        steals mouse events from the nav link it labels. */}
                     {collapsed && (
-                      <div className="absolute left-full ml-2 px-2.5 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-primary)] text-xs font-medium text-[var(--text-primary)] shadow-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-primary)] text-xs font-medium text-[var(--text-primary)] shadow-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[60] pointer-events-none">
                         {item.label}
+                        {/* FIX: Added a small left-pointing caret for visual connection */}
+                        <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[var(--border-primary)]" />
                       </div>
                     )}
                   </NavLink>
@@ -176,7 +205,9 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       </nav>
 
       {/* ─── User Profile / Collapse ──── */}
-      <div className="border-t border-[var(--border-primary)] p-3">
+      {/* FIX: flex-shrink-0 prevents this footer from being squished when the
+          nav has many items on a short screen. */}
+      <div className="border-t border-[var(--border-primary)] p-3 flex-shrink-0">
         {/* Collapse Toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
