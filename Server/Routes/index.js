@@ -10,6 +10,7 @@ import marketRoutes from './marketRoutes.js';
 import tradeRoutes from './tradeRoutes.js';
 import alertRoutes from './alertRoutes.js';
 import settingsRoutes from './settingsRoutes.js';
+import kotakAdminRoutes from './kotakAdminRoutes.js';
 
 // Mount all routes
 router.use('/auth', authRoutes);
@@ -18,9 +19,10 @@ router.use('/portfolio', portfolioRoutes);
 router.use('/watchlists', watchlistRoutes);
 router.use('/funds', fundRoutes);
 router.use('/market', marketRoutes);
-router.use('/stocks', marketRoutes); // alias
+router.use('/stocks', marketRoutes);
 router.use('/trades', tradeRoutes);
 router.use('/alerts', alertRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/kotak', kotakAdminRoutes);
 
 export default router;

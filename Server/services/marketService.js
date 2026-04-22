@@ -1,167 +1,168 @@
-// ============================================
-// Market Service — Indices, quotes, search
-// ============================================
-import { StockData, MarketIndex } from '../Models/nosql/index.js';
 import { getMarketStatus } from '../utils/helpers.js';
-import { MARKET_INDICES, NIFTY_50_STOCKS } from '../utils/constants.js';
+import instrumentService from './kotakInstrumentService.js';
+import quoteService from './kotakQuoteService.js';
 
-// ─── Market status ─────────────────────────
+const DEFAULT_INDEXES = [
+  { exchangeSegment: 'nse_cm', query: 'Nifty 50', symbol: 'NIFTY 50' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Bank', symbol: 'NIFTY BANK' },
+  { exchangeSegment: 'bse_cm', query: 'SENSEX', symbol: 'SENSEX' },
+];
+
 const getStatus = () => getMarketStatus();
 
-// ─── All indices ───────────────────────────
-const getAllIndices = async () => {
-  try {
-    const docs = await MarketIndex.find({}).sort({ symbol: 1 });
-    if (docs.length > 0) return docs;
-  } catch (_) {}
+const toIsoTime = (quote) => {
+  const ts = Number(quote?.lstup_time || 0);
+  return ts > 0 ? new Date(ts * 1000).toISOString() : new Date().toISOString();
+};
 
-  // Fallback mock data
-  return MARKET_INDICES.map((idx) => ({
-    ...idx,
-    current_value:  10000 + Math.random() * 30000,
-    change:         (Math.random() - 0.5) * 300,
-    change_percent: (Math.random() - 0.5) * 2,
-    open:  9800 + Math.random() * 29000,
-    high:  10200 + Math.random() * 30000,
-    low:   9600  + Math.random() * 28000,
+const getAllIndices = async () => {
+  const indexLikeInstruments = DEFAULT_INDEXES.map((item) => ({
+    exchangeSegment: item.exchangeSegment,
+    exchangeIdentifier: item.query,
+    symbol: item.symbol,
+    displaySymbol: item.symbol,
+    tradingSymbol: item.symbol,
+    instrumentName: item.symbol,
+  }));
+
+  const quotes = await quoteService.getQuotes({
+    instruments: indexLikeInstruments,
+    filter: 'all',
+  });
+
+  return quotes.map((quote) => ({
+    symbol: quote.display_symbol || quote.exchange_token,
+    exchange: quote.exchange,
+    current_value: Number(quote.ltp || 0),
+    change: Number(quote.change || 0),
+    change_percent: Number(quote.per_change || 0),
+    open: Number(quote?.ohlc?.open || 0),
+    high: Number(quote?.ohlc?.high || 0),
+    low: Number(quote?.ohlc?.low || 0),
+    previous_close: Number(quote?.ohlc?.close || 0),
+    volume: Number(quote.last_volume || 0),
     market_status: getMarketStatus().status,
-    last_updated:  new Date(),
+    last_updated: toIsoTime(quote),
   }));
 };
 
-// ─── Stock search ──────────────────────────
-const searchStocks = async (query, limit = 15) => {
-  if (!query || query.length < 1) return [];
+const searchStocks = async (query, limit = 15, exchangeSegment) => {
+  const results = await instrumentService.searchInstruments({
+    query,
+    exchangeSegment,
+    limit,
+  });
 
-  try {
-    const docs = await StockData.find(
-      { $text: { $search: query }, is_active: true },
-      { score: { $meta: 'textScore' } }
-    )
-    .sort({ score: { $meta: 'textScore' } })
-    .limit(limit)
-    .select('symbol name exchange sector isin quote.price quote.change_percent');
-
-    if (docs.length > 0) return docs;
-  } catch (_) {}
-
-  // Fallback: search in NIFTY 50 list
-  const q = query.toLowerCase();
-  return NIFTY_50_STOCKS
-    .filter((s) =>
-      s.symbol.toLowerCase().includes(q) ||
-      s.name.toLowerCase().includes(q)
-    )
-    .slice(0, limit)
-    .map((s) => ({
-      symbol:   s.symbol,
-      name:     s.name,
-      exchange: 'NSE',
-      sector:   s.sector,
-      isin:     s.isin,
-      price:    1000 + Math.random() * 3000,
-      change_percent: (Math.random() - 0.5) * 4,
-    }));
+  return results.map((item) => ({
+    symbol: item.symbol,
+    name: item.instrumentName,
+    exchange: item.exchangeSegment,
+    display_symbol: item.displaySymbol,
+    trading_symbol: item.tradingSymbol,
+    exchange_identifier: item.exchangeIdentifier,
+    lot_size: item.lotSize,
+  }));
 };
 
-// ─── Single stock quote ────────────────────
 const getStockQuote = async (symbol) => {
-  try {
-    const doc = await StockData.findOne({ symbol: symbol.toUpperCase() });
-    if (doc) return doc;
-  } catch (_) {}
+  const { instrument, quote } = await quoteService.getQuoteBySymbol(symbol, 'all');
 
-  const base  = NIFTY_50_STOCKS.find((s) => s.symbol === symbol.toUpperCase());
-  const price = 1000 + Math.random() * 3000;
-  const prev  = price * (1 - (Math.random() - 0.5) * 0.03);
+  if (!quote) {
+    throw new Error(`No quote found for symbol: ${symbol}`);
+  }
 
   return {
-    symbol:   symbol.toUpperCase(),
-    name:     base?.name || symbol,
-    exchange: 'NSE',
-    sector:   base?.sector || 'Equity',
+    symbol: instrument.symbol,
+    name: instrument.instrumentName,
+    exchange: instrument.exchangeSegment,
+    exchange_identifier: instrument.exchangeIdentifier,
+    display_symbol: instrument.displaySymbol,
+    trading_symbol: instrument.tradingSymbol,
     quote: {
-      price,
-      previous_close:  +prev.toFixed(2),
-      open:            +(price * 0.998).toFixed(2),
-      high:            +(price * 1.012).toFixed(2),
-      low:             +(price * 0.988).toFixed(2),
-      change:          +(price - prev).toFixed(2),
-      change_percent:  +((price - prev) / prev * 100).toFixed(2),
-      volume:          Math.floor(100000 + Math.random() * 5000000),
-      week_52_high:    +(price * 1.35).toFixed(2),
-      week_52_low:     +(price * 0.70).toFixed(2),
-      upper_circuit:   +(price * 1.20).toFixed(2),
-      lower_circuit:   +(price * 0.80).toFixed(2),
-      last_updated:    new Date(),
+      price: Number(quote.ltp || 0),
+      previous_close: Number(quote?.ohlc?.close || 0),
+      open: Number(quote?.ohlc?.open || 0),
+      high: Number(quote?.ohlc?.high || 0),
+      low: Number(quote?.ohlc?.low || 0),
+      change: Number(quote.change || 0),
+      change_percent: Number(quote.per_change || 0),
+      volume: Number(quote.last_volume || 0),
+      last_traded_quantity: Number(quote.last_traded_quantity || 0),
+      total_buy: Number(quote.total_buy || 0),
+      total_sell: Number(quote.total_sell || 0),
+      week_52_high: Number(quote.year_high || 0),
+      week_52_low: Number(quote.year_low || 0),
+      last_updated: toIsoTime(quote),
     },
+    market_depth: quote.depth || null,
     company_info: {
-      market_cap:           Math.floor(price * 100000000),
-      market_cap_category:  'large_cap',
-      pe_ratio:             +(15 + Math.random() * 25).toFixed(2),
-      pb_ratio:             +(1 + Math.random() * 6).toFixed(2),
-      eps:                  +(price / (15 + Math.random() * 20)).toFixed(2),
-      dividend_yield:       +(Math.random() * 3).toFixed(2),
-      face_value:           10,
-      lot_size:             1,
+      lot_size: instrument.lotSize,
     },
   };
 };
 
-// ─── Top Gainers ───────────────────────────
+const sortByField = (quotes, field, direction = 'desc', limit = 10) => {
+  const sorted = [...quotes].sort((a, b) => {
+    const av = Number(a[field] || 0);
+    const bv = Number(b[field] || 0);
+    return direction === 'desc' ? bv - av : av - bv;
+  });
+
+  return sorted.slice(0, limit);
+};
+
+const toMoverShape = (quote) => ({
+  symbol: quote.display_symbol || quote.exchange_token,
+  name: quote.display_symbol || quote.exchange_token,
+  exchange: quote.exchange,
+  price: Number(quote.ltp || 0),
+  change: Number(quote.change || 0),
+  change_percent: Number(quote.per_change || 0),
+  volume: Number(quote.last_volume || 0),
+});
+
 const getTopGainers = async (limit = 10) => {
-  try {
-    return await StockData.find({ 'quote.change_percent': { $gt: 0 } })
-      .sort({ 'quote.change_percent': -1 })
-      .limit(limit)
-      .select('symbol name exchange quote.price quote.change quote.change_percent quote.volume');
-  } catch (_) {}
-
-  return NIFTY_50_STOCKS.slice(0, limit).map((s) => ({
-    symbol: s.symbol, name: s.name, exchange: 'NSE',
-    price: 1000 + Math.random() * 3000,
-    change: +(10 + Math.random() * 50).toFixed(2),
-    change_percent: +(0.5 + Math.random() * 4).toFixed(2),
-    volume: Math.floor(100000 + Math.random() * 5000000),
-  }));
+  const quotes = await quoteService.getQuotesForUniverse({ limit: 50, filter: 'all' });
+  return sortByField(quotes, 'per_change', 'desc', limit).map(toMoverShape);
 };
 
-// ─── Top Losers ────────────────────────────
 const getTopLosers = async (limit = 10) => {
-  try {
-    return await StockData.find({ 'quote.change_percent': { $lt: 0 } })
-      .sort({ 'quote.change_percent': 1 })
-      .limit(limit)
-      .select('symbol name exchange quote.price quote.change quote.change_percent quote.volume');
-  } catch (_) {}
-
-  return NIFTY_50_STOCKS.slice(10, 10 + limit).map((s) => ({
-    symbol: s.symbol, name: s.name, exchange: 'NSE',
-    price: 1000 + Math.random() * 3000,
-    change: -(10 + Math.random() * 50).toFixed(2),
-    change_percent: -(0.5 + Math.random() * 4).toFixed(2),
-    volume: Math.floor(100000 + Math.random() * 5000000),
-  }));
+  const quotes = await quoteService.getQuotesForUniverse({ limit: 50, filter: 'all' });
+  return sortByField(quotes, 'per_change', 'asc', limit).map(toMoverShape);
 };
 
-// ─── Most active ───────────────────────────
 const getMostActive = async (limit = 10) => {
-  try {
-    return await StockData.find({ is_active: true })
-      .sort({ 'quote.volume': -1 })
-      .limit(limit)
-      .select('symbol name exchange quote.price quote.change_percent quote.volume');
-  } catch (_) {}
-
-  return NIFTY_50_STOCKS.slice(20, 20 + limit).map((s) => ({
-    symbol: s.symbol, name: s.name, exchange: 'NSE',
-    price: 1000 + Math.random() * 3000,
-    change_percent: (Math.random() - 0.5) * 4,
-    volume: Math.floor(1000000 + Math.random() * 20000000),
-  }));
+  const quotes = await quoteService.getQuotesForUniverse({ limit: 50, filter: 'all' });
+  return sortByField(quotes, 'last_volume', 'desc', limit).map(toMoverShape);
 };
 
-export { getStatus, getAllIndices, searchStocks, getStockQuote, getTopGainers, getTopLosers, getMostActive };
+const refreshInstrumentMaster = async () => {
+  const instruments = await instrumentService.refreshScripMaster();
+  return {
+    count: instruments.length,
+    loaded_at: new Date().toISOString(),
+  };
+};
+
+const getInstrumentMasterStats = async () => {
+  const count = await instrumentService.getInstrumentCount();
+  return {
+    count,
+    status: count > 0 ? 'ready' : 'empty',
+  };
+};
+
+export {
+  getStatus,
+  getAllIndices,
+  searchStocks,
+  getStockQuote,
+  getTopGainers,
+  getTopLosers,
+  getMostActive,
+  refreshInstrumentMaster,
+  getInstrumentMasterStats,
+};
 
 export default {
   getStatus,
@@ -171,4 +172,6 @@ export default {
   getTopGainers,
   getTopLosers,
   getMostActive,
+  refreshInstrumentMaster,
+  getInstrumentMasterStats,
 };

@@ -11,6 +11,9 @@ import Skeleton from '@/components/ui/Skeleton';
 import Badge from '@/components/ui/Badge';
 import toast from 'react-hot-toast';
 import tradingService from '@/services/tradingService';
+import useMarketStore from '@/store/marketStore';
+import useMarketSubscription from '@/hooks/useMarketSubscription';
+
 
 const MOCK_POSITIONS = [
   { id:'p1', symbol:'RELIANCE',  name:'Reliance Industries', exchange:'NSE',
@@ -134,10 +137,49 @@ const Positions = () => {
   const navigate = useNavigate();
   const [positions, setPositions] = useState([]);
   const [loading,   setLoading]   = useState(true);
+  const ticksByKey = useMarketStore((s) => s.ticksByKey);
+
+  useMarketSubscription({
+    symbols: positions.map((p) => p.symbol),
+    enabled: !loading,
+  });
+
 
   useEffect(() => {
   fetchPositions();
   }, []);
+
+    useEffect(() => {
+    if (!positions.length) return;
+
+    setPositions((prev) =>
+      prev.map((p) => {
+        const liveTick = Object.values(ticksByKey || {}).find(
+          (tick) => tick.symbol?.toUpperCase() === p.symbol?.toUpperCase()
+        );
+
+        if (!liveTick) return p;
+
+        const current_price = liveTick.price ?? p.current_price;
+
+        let unrealized_pnl = p.unrealized_pnl;
+
+        if (p.position_type === 'long') {
+          unrealized_pnl = (current_price - p.buy_avg) * Math.abs(p.net_qty);
+        } else {
+          unrealized_pnl = (p.sell_avg - current_price) * Math.abs(p.net_qty);
+        }
+
+        return {
+          ...p,
+          current_price,
+          unrealized_pnl,
+          total_pnl: (p.realized_pnl || 0) + unrealized_pnl,
+        };
+      })
+    );
+  }, [ticksByKey]);
+
 
   const fetchPositions = async () => {
   try {

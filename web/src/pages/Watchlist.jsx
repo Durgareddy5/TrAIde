@@ -9,6 +9,9 @@ import {
 import { formatINR, formatPercent, getPnLColor } from '@/utils/formatters';
 import Skeleton from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
+import useMarketStore from '@/store/marketStore';
+import useMarketSubscription from '@/hooks/useMarketSubscription';
+
 
 const WLCOLORS = ['#0052FF','#7C3AED','#00E676','#FFB300','#FF6B35','#29B6F6'];
 
@@ -63,6 +66,8 @@ const Watchlist = () => {
   const [newWlName,    setNewWlName]    = useState('');
   const [newWlColor,   setNewWlColor]   = useState('#0052FF');
   const [addSearch,    setAddSearch]    = useState('');
+  const ticksByKey = useMarketStore((s) => s.ticksByKey);
+
 
   useEffect(() => {
     setTimeout(() => {
@@ -72,7 +77,42 @@ const Watchlist = () => {
     }, 600);
   }, []);
 
+    useEffect(() => {
+    if (!currentWl?.items?.length) return;
+
+    setWatchlists((prev) =>
+      prev.map((wl) => {
+        if (wl.id !== currentWl.id) return wl;
+
+        return {
+          ...wl,
+          items: wl.items.map((item) => {
+            const liveTick = Object.values(ticksByKey || {}).find(
+              (tick) => tick.symbol?.toUpperCase() === item.symbol?.toUpperCase()
+            );
+
+            if (!liveTick) return item;
+
+            return {
+              ...item,
+              price: liveTick.price ?? item.price,
+              change: liveTick.change ?? item.change,
+              pct: liveTick.changePercent ?? item.pct,
+            };
+          }),
+        };
+      })
+    );
+  }, [currentWl?.id, currentWl?.items?.length, ticksByKey]);
+
+
   const currentWl = watchlists.find((w) => w.id === activeWl);
+
+  useMarketSubscription({
+    symbols: currentWl?.items?.map((item) => item.symbol) || [],
+    enabled: Boolean(currentWl),
+  });
+
 
   const filteredItems = currentWl?.items.filter((item) =>
     search

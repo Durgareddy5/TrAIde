@@ -4,86 +4,63 @@ import useMarketStore from '@/store/marketStore';
 
 const useLiveMarketData = () => {
   const updateTicks = useMarketStore((s) => s.updateTicks);
+  const updateDepth = useMarketStore((s) => s.updateDepth);
   const setMarketStatus = useMarketStore((s) => s.setMarketStatus);
 
-  // 🔥 Buffer for throttling
-  const buffer = useRef({});
-  const lastUpdate = useRef(0);
+  const tickBuffer = useRef({});
+  const lastFlush = useRef(0);
 
   useEffect(() => {
     const socket = getSocket();
+    if (!socket?.on) return;
 
-    // ================================
-    // CONNECT
-    // ================================
-    socket.on('connect', () => {
-      console.log('✅ Connected to socket:', socket.id);
-    });
+    const handleTick = (tick) => {
+      if (!tick?.key) return;
+      tickBuffer.current[tick.key] = tick;
+    };
 
-    // ================================
-    // RECEIVE TICKS
-    // ================================
-    socket.on('ticks', (data) => {
-      if (!data || !Array.isArray(data)) {
-        console.log('⚠️ Invalid ticks received');
-        return;
-      }
+    const handleDepth = (depth) => {
+      if (!depth?.key) return;
+      updateDepth(depth);
+    };
 
-      console.log('📥 RAW TICKS:', data);
+    const handleStatus = (status) => {
+      if (!status) return;
+      setMarketStatus(status);
+    };
 
-      // 🔥 Normalize & merge ticks
-      data.forEach((tick) => {
-        if (!tick.symbol || tick.price == null) return;
+    const handleError = (error) => {
+      console.error("Market stream error:", error?.message || error);
+    };
 
-        buffer.current[tick.symbol] = {
-          symbol: tick.symbol,
-          price: Number(tick.price),
-          timestamp: tick.timestamp || Date.now(),
-        };
-      });
-    });
+    const tickListener = (e) => handleTick(e);
+    const depthListener = (e) => handleDepth(e);
+    const statusListener = (e) => handleStatus(e);
+    const errorListener = (e) => handleError(e);
+    
+    socket.on('market:tick', tickListener);
+    socket.on('market:depth', depthListener);
+    socket.on('market:status', statusListener);
+    socket.on('market:error', errorListener);
 
-    // ================================
-    // MARKET STATUS
-    // ================================
-    socket.on('market_status', (data) => {
-      if (!data) return;
+   const interval = setInterval(() => {
+     const bufferedTicks = Object.values(tickBuffer.current);
+   
+     if (!bufferedTicks.length) return;
+   
+     updateTicks(bufferedTicks);
+     tickBuffer.current = {};
+     lastFlush.current = Date.now();
+   }, 100);
 
-      console.log('📡 MARKET STATUS:', data);
-      setMarketStatus(data);
-    });
-
-    // ================================
-    // THROTTLED STORE UPDATE
-    // ================================
-    const interval = setInterval(() => {
-      const now = Date.now();
-
-      // ⚡ Avoid unnecessary updates
-      if (Object.keys(buffer.current).length === 0) return;
-      if (now - lastUpdate.current < 100) return;
-
-      const ticksArray = Object.values(buffer.current);
-
-      console.log('🚀 PUSHING TO STORE:', ticksArray);
-
-      updateTicks(ticksArray);
-
-      buffer.current = {};
-      lastUpdate.current = now;
-
-    }, 100); // 🔥 smoother updates
-
-    // ================================
-    // CLEANUP
-    // ================================
     return () => {
-      socket.off('connect');
-      socket.off('ticks');
-      socket.off('market_status');
+    socket.off('market:tick', tickListener);
+    socket.off('market:depth', depthListener);
+    socket.off('market:status', statusListener);
+    socket.off('market:error', errorListener);
       clearInterval(interval);
     };
-  }, []);
+  }, [setMarketStatus, updateDepth, updateTicks]);
 
   return null;
 };

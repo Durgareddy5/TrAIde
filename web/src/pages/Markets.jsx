@@ -13,6 +13,9 @@ import { formatINR, formatPercent, getPnLColor } from '@/utils/formatters';
 import Skeleton from '@/components/ui/Skeleton';
 import Badge from '@/components/ui/Badge';
 import useMarketStore from '@/store/marketStore';
+import useMarketSubscription from '@/hooks/useMarketSubscription';
+import tradingService from '@/services/tradingService';
+
 
 
 /* ─── Mock Data ───────────────────────────────── */
@@ -244,57 +247,152 @@ const Markets = () => {
   const [activeSection, setActiveSection] = useState('indices');
   const [search, setSearch]  = useState('');
   const ticks = useMarketStore((s) => s.ticks);
+
+    useMarketSubscription({
+    symbols: [
+      'RELIANCE',
+      'TCS',
+      'HDFCBANK',
+      'INFY',
+      'SBIN',
+      'WIPRO',
+      'SUNPHARMA',
+      'ICICIBANK',
+      'TATAMOTORS',
+      'ITC',
+      'BHARTIARTL',
+      'NESTLEIND',
+      'JSWSTEEL',
+      'AXISBANK',
+      'HCLTECH',
+    ],
+    indices: [
+      'nse_cm|Nifty 50',
+      'nse_cm|Nifty Bank',
+      'bse_cm|SENSEX',
+    ],
+  });
+
+
   const [liveData, setLiveData] = useState({});
   console.log('LIVE DATA:', liveData);
   const marketArray = Object.values(liveData);
 
-  const mergedIndices = INDICES.map((idx) => {
-  const live = liveData[idx.symbol] || liveData[idx.symbol.replace('_', '')];
+    const mergedIndices = INDICES.map((idx) => {
+    const candidates = [
+      liveData[idx.symbol],
+      liveData[idx.symbol?.replaceAll('_', ' ')],
+      liveData[idx.name?.toUpperCase()],
+      liveData[idx.name],
+    ];
 
-  if (!live) return idx;
+    const live = candidates.find(Boolean);
+    if (!live) return idx;
 
-  return {
-    ...idx,
-    value: live.price,
-    change: live.change,
-    pct: live.pct,
-  };
-  }); 
-
-
-  useEffect(() => {
-  if (!ticks || ticks.length === 0) return;
-
-  console.log('📊 MARKETS TICKS:', ticks);
-
-  setLiveData((prev) => {
-    const updated = { ...prev };
-
-    ticks.forEach((t) => {
-      if (!t.symbol || typeof t.price !== 'number') return;
-
-      const prevPrice = updated[t.symbol]?.prevPrice || t.price;
-
-      const change = t.price - prevPrice;
-      const pct = prevPrice !== 0 ? (change / prevPrice) * 100 : 0;
-
-      updated[t.symbol] = {
-        symbol: t.symbol,
-        price: t.price,
-        prevPrice: updated[t.symbol]?.price || t.price,
-        change,
-        pct,
-        timestamp: t.timestamp,
-      };
-    });
-
-    return updated;
+    return {
+      ...idx,
+      value: live.price ?? idx.value,
+      change: live.change ?? idx.change,
+      pct: live.changePercent ?? live.pct ?? idx.pct,
+      open: live.open ?? idx.open,
+      high: live.high ?? idx.high,
+      low: live.low ?? idx.low,
+    };
   });
-}, [ticks]);
+
+
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 600);
+    if (!ticks || ticks.length === 0) return;
+
+    setLiveData((prev) => {
+      const updated = { ...prev };
+
+      ticks.forEach((tick) => {
+        if (!tick?.symbol || typeof tick.price !== 'number') return;
+
+        updated[tick.symbol] = {
+          symbol: tick.symbol,
+          price: tick.price,
+          change: tick.change ?? 0,
+          changePercent: tick.changePercent ?? 0,
+          pct: tick.changePercent ?? 0,
+          open: tick.open ?? 0,
+          high: tick.high ?? 0,
+          low: tick.low ?? 0,
+          volume: tick.volume ?? 0,
+          timestamp: tick.timestamp ?? Date.now(),
+        };
+      });
+
+      return updated;
+    });
+  }, [ticks]);
+
+
+  useEffect(() => {
+    const loadMarketSnapshots = async () => {
+      try {
+        setLoading(true);
+
+        const [indicesRes, gainersRes, losersRes, activeRes] = await Promise.all([
+          tradingService.getMarketIndices(),
+          tradingService.getTopGainers(10),
+          tradingService.getTopLosers(10),
+          tradingService.getMostActive(10),
+        ]);
+
+        const fetchedIndices = indicesRes?.data || [];
+        const fetchedGainers = gainersRes?.data || [];
+        const fetchedLosers = losersRes?.data || [];
+        const fetchedActive = activeRes?.data || [];
+
+        if (fetchedIndices.length) {
+          setLiveData((prev) => {
+            const next = { ...prev };
+
+            fetchedIndices.forEach((idx) => {
+              const key = (idx.symbol || idx.name || '').toUpperCase();
+              next[key] = {
+                symbol: key,
+                price: idx.current_value ?? 0,
+                change: idx.change ?? 0,
+                changePercent: idx.change_percent ?? 0,
+                pct: idx.change_percent ?? 0,
+                open: idx.open ?? 0,
+                high: idx.high ?? 0,
+                low: idx.low ?? 0,
+                volume: idx.volume ?? 0,
+              };
+            });
+
+            [...fetchedGainers, ...fetchedLosers, ...fetchedActive].forEach((item) => {
+              const key = (item.symbol || '').toUpperCase();
+              if (!key) return;
+
+              next[key] = {
+                symbol: key,
+                price: item.price ?? 0,
+                change: item.change ?? 0,
+                changePercent: item.change_percent ?? item.pct ?? 0,
+                pct: item.change_percent ?? item.pct ?? 0,
+                volume: item.volume ?? 0,
+              };
+            });
+
+            return next;
+          });
+        }
+      } catch (error) {
+        console.error('Markets snapshot load error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMarketSnapshots();
   }, []);
+
 
   const marketOpen = (() => {
     const now = new Date();
@@ -369,7 +467,51 @@ const Markets = () => {
           </div>
 
           <button
-            onClick={() => { setLoading(true); setTimeout(() => setLoading(false), 600); }}
+            onClick={async () => {
+              try {
+                setLoading(true);
+                const [indicesRes, gainersRes, losersRes, activeRes] = await Promise.all([
+                  tradingService.getMarketIndices(),
+                  tradingService.getTopGainers(10),
+                  tradingService.getTopLosers(10),
+                  tradingService.getMostActive(10),
+                ]);
+
+                const allRows = [
+                  ...(indicesRes?.data || []),
+                  ...(gainersRes?.data || []),
+                  ...(losersRes?.data || []),
+                  ...(activeRes?.data || []),
+                ];
+
+                setLiveData((prev) => {
+                  const next = { ...prev };
+
+                  allRows.forEach((item) => {
+                    const key = (item.symbol || item.name || '').toUpperCase();
+                    if (!key) return;
+
+                    next[key] = {
+                      symbol: key,
+                      price: item.current_value ?? item.price ?? 0,
+                      change: item.change ?? 0,
+                      changePercent: item.change_percent ?? item.pct ?? 0,
+                      pct: item.change_percent ?? item.pct ?? 0,
+                      open: item.open ?? 0,
+                      high: item.high ?? 0,
+                      low: item.low ?? 0,
+                      volume: item.volume ?? 0,
+                    };
+                  });
+
+                  return next;
+                });
+              } catch (error) {
+                console.error('Markets refresh error:', error);
+              } finally {
+                setLoading(false);
+              }
+            }}
             className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)]
                        text-[var(--text-secondary)] hover:text-[var(--text-primary)]
                        hover:border-[var(--border-secondary)] transition-all duration-200"

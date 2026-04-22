@@ -2,41 +2,44 @@ import { useEffect, useRef } from 'react';
 import useMarketStore from '@/store/marketStore';
 import { OHLCAggregator } from '@/utils/ohlcAggregator';
 
-const useCandleStream = () => {
-  const ticks = useMarketStore((s) => s.ticks);
-  const setCandles = useMarketStore((s) => s.setCandles);
+const useCandleStream = (marketKey) => {
+  const tick = useMarketStore((s) => (marketKey ? s.ticksByKey[marketKey] : null));
+  const candlesByKey = useMarketStore((s) => s.candlesByKey);
+  const setCandlesForKey = useMarketStore((s) => s.setCandlesForKey);
 
-  const aggregatorRef = useRef(new OHLCAggregator(60000)); // 1 min
+  const aggregatorRef = useRef(null);
   const candlesRef = useRef([]);
 
   useEffect(() => {
-    if (!ticks || ticks.length === 0) return;
+    if (!marketKey) return;
 
-    ticks.forEach((tick) => {
-      const result = aggregatorRef.current.processTick({
-        price: tick.price,
-        timestamp: tick.timestamp,
-      });
+    aggregatorRef.current = new OHLCAggregator(60000);
+    candlesRef.current = candlesByKey[marketKey] || [];
+  }, [marketKey, candlesByKey]);
 
-      if (result.type === 'new') {
-        candlesRef.current.push(result.candle);
-      }
+  useEffect(() => {
+    if (!marketKey || !tick || !aggregatorRef.current) return;
 
-      if (result.type === 'close') {
-        candlesRef.current[candlesRef.current.length - 1] = result.closed;
-        candlesRef.current.push(result.new);
-      }
-
-      if (result.type === 'update') {
-        candlesRef.current[candlesRef.current.length - 1] = result.candle;
-      }
+    const result = aggregatorRef.current.processTick({
+      price: tick.price,
+      timestamp: tick.timestamp,
     });
 
-    // ✅ Throttle UI updates
-    setCandles([...candlesRef.current]);
+    if (result.type === 'new') {
+      candlesRef.current.push(result.candle);
+    }
 
-  }, [ticks]);
+    if (result.type === 'close') {
+      candlesRef.current[candlesRef.current.length - 1] = result.closed;
+      candlesRef.current.push(result.new);
+    }
 
+    if (result.type === 'update') {
+      candlesRef.current[candlesRef.current.length - 1] = result.candle;
+    }
+
+    setCandlesForKey(marketKey, [...candlesRef.current]);
+  }, [marketKey, tick, setCandlesForKey]);
 };
 
 export default useCandleStream;

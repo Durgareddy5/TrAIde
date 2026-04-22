@@ -14,6 +14,11 @@ import Badge   from '@/components/ui/Badge';
 import Skeleton from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 import tradingService from '@/services/tradingService';
+import useMarketStore from '@/store/marketStore';
+import useMarketSubscription from '@/hooks/useMarketSubscription';
+
+
+
 
 /* ─── Mock stock data map ─────────────────────── */
 const STOCK_MAP = {
@@ -404,14 +409,88 @@ const StockDetail = () => {
   const [watchlisted, setWatchlisted] = useState(false);
   const [infoTab, setInfoTab] = useState('overview');
 
+  const ticksByKey = useMarketStore((s) => s.ticksByKey);
+  const depthByKey = useMarketStore((s) => s.depthByKey);
+
+  useMarketSubscription({
+    symbols: symbol ? [symbol] : [],
+    enabled: Boolean(symbol),
+  });
+
+
+
+
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      const data = STOCK_MAP[symbol] || { ...FALLBACK, symbol };
-      setStock({ ...data, symbol });
-      setLoading(false);
-    }, 600);
+    const loadStock = async () => {
+      try {
+        setLoading(true);
+
+        const res = await tradingService.getStockDetails(symbol);
+        const data = res?.data;
+
+        if (data) {
+          setStock({
+            symbol: data.symbol,
+            name: data.name,
+            sector: data.sector || 'Equity',
+            exchange: data.exchange || 'NSE',
+            price: data.quote?.price ?? FALLBACK.price,
+            prevClose: data.quote?.previous_close ?? FALLBACK.prevClose,
+            open: data.quote?.open ?? FALLBACK.open,
+            high: data.quote?.high ?? FALLBACK.high,
+            low: data.quote?.low ?? FALLBACK.low,
+            volume: data.quote?.volume ?? FALLBACK.volume,
+            marketCap: data.company_info?.market_cap ?? FALLBACK.marketCap,
+            pe: data.company_info?.pe_ratio ?? FALLBACK.pe,
+            pb: data.company_info?.pb_ratio ?? FALLBACK.pb,
+            eps: data.company_info?.eps ?? FALLBACK.eps,
+            div: data.company_info?.dividend_yield ?? FALLBACK.div,
+            week52H: data.quote?.week_52_high ?? FALLBACK.week52H,
+            week52L: data.quote?.week_52_low ?? FALLBACK.week52L,
+            lot: data.company_info?.lot_size ?? FALLBACK.lot,
+          });
+        } else {
+          const fallback = STOCK_MAP[symbol] || { ...FALLBACK, symbol };
+          setStock({ ...fallback, symbol });
+        }
+      } catch (error) {
+        console.error('Stock detail load error:', error);
+        const fallback = STOCK_MAP[symbol] || { ...FALLBACK, symbol };
+        setStock({ ...fallback, symbol });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStock();
   }, [symbol]);
+
+
+  useEffect(() => {
+    if (!stock) return;
+
+    const liveTick = Object.values(ticksByKey || {}).find(
+      (tick) => tick.symbol?.toUpperCase() === symbol?.toUpperCase()
+    );
+
+    if (!liveTick) return;
+
+    setStock((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        price: liveTick.price ?? prev.price,
+        prevClose: liveTick.close ?? prev.prevClose,
+        open: liveTick.open ?? prev.open,
+        high: liveTick.high ?? prev.high,
+        low: liveTick.low ?? prev.low,
+        volume: liveTick.volume ?? prev.volume,
+      };
+    });
+  }, [symbol, ticksByKey]);
+
+
 
   const change    = stock ? stock.price - stock.prevClose : 0;
   const changePct = stock ? (change / stock.prevClose) * 100 : 0;
@@ -427,22 +506,40 @@ const StockDetail = () => {
   const INTERVALS = ['1D','1W','1M','3M','6M','1Y'];
 
   /* mock market depth */
-  const depth = {
-    bids: [
-      { price:1285.00, qty:500,  orders:12 },
-      { price:1284.50, qty:1200, orders:28 },
-      { price:1284.00, qty:800,  orders:15 },
-      { price:1283.50, qty:2000, orders:42 },
-      { price:1283.00, qty:650,  orders:9  },
-    ],
-    asks: [
-      { price:1285.50, qty:400,  orders:8  },
-      { price:1286.00, qty:900,  orders:21 },
-      { price:1286.50, qty:1500, orders:35 },
-      { price:1287.00, qty:600,  orders:11 },
-      { price:1287.50, qty:1100, orders:26 },
-    ],
-  };
+    const liveDepthEntry = Object.values(depthByKey || {}).find(
+    (entry) => entry.symbol?.toUpperCase() === symbol?.toUpperCase()
+  );
+
+  const depth = liveDepthEntry
+    ? {
+        bids: liveDepthEntry.buy.map((b) => ({
+          price: b.price,
+          qty: b.quantity,
+          orders: b.orders,
+        })),
+        asks: liveDepthEntry.sell.map((a) => ({
+          price: a.price,
+          qty: a.quantity,
+          orders: a.orders,
+        })),
+      }
+    : {
+        bids: [
+          { price:1285.00, qty:500,  orders:12 },
+          { price:1284.50, qty:1200, orders:28 },
+          { price:1284.00, qty:800,  orders:15 },
+          { price:1283.50, qty:2000, orders:42 },
+          { price:1283.00, qty:650,  orders:9  },
+        ],
+        asks: [
+          { price:1285.50, qty:400,  orders:8  },
+          { price:1286.00, qty:900,  orders:21 },
+          { price:1286.50, qty:1500, orders:35 },
+          { price:1287.00, qty:600,  orders:11 },
+          { price:1287.50, qty:1100, orders:26 },
+        ],
+      };
+
 
   return (
     <div className="space-y-4">

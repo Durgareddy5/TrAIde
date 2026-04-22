@@ -17,6 +17,7 @@ import { formatINR, formatPercent, formatDate, getPnLColor } from '@/utils/forma
 import Skeleton, { SkeletonCard } from '@/components/ui/Skeleton';
 import Badge from '@/components/ui/Badge';
 import useMarketStore from '@/store/marketStore';
+import useMarketSubscription from '@/hooks/useMarketSubscription';
 
 /* ─── Animated summary card ────────────────── */
 const SummaryCard = ({ title, value, change, changeLabel, icon: Icon,
@@ -188,6 +189,16 @@ const Dashboard = () => {
   const [indices, setIndices]         = useState([]);
   const [chartData, setChartData]     = useState([]);
   const ticks = useMarketStore((s) => s.ticks);
+    
+  useMarketSubscription({
+    symbols: holdings.map((h) => `nse_cm|${h.token || h.symbol}`),
+    indices: [
+      'nse_cm|26000', // NIFTY 50
+      'nse_cm|26009', // BANK NIFTY
+    ],
+    enabled: !loading,
+  });
+
 
   /* ── Mock chart data ── */
   const generateChartData = () =>
@@ -258,33 +269,78 @@ const Dashboard = () => {
   useEffect(() => { fetchData(); }, []);
 
   useEffect(() => {
-  if (!ticks || ticks.length === 0) return;
+    if (!ticks || ticks.length === 0) return;
 
-  console.log('📊 DASHBOARD RECEIVED TICKS:', ticks);
+    setHoldings((prev) =>
+      prev.map((h) => {
+        const tick = ticks.find((t) =>
+          t.symbol?.toUpperCase() === h.symbol?.toUpperCase()
+        );
+        if (!tick) return h;
 
-  // 🔥 Update Holdings LIVE
-  setHoldings((prev) =>
-    prev.map((h) => {
-      const tick = ticks.find((t) => t.symbol === h.symbol);
+        const currentPrice = tick.price ?? h.current_price;
+        const pnl = (currentPrice - h.average_price) * h.quantity;
+        const pnlPercentage =
+          h.average_price > 0
+            ? ((currentPrice - h.average_price) / h.average_price) * 100
+            : 0;
 
-      if (!tick) return h;
+        return {
+          ...h,
+          current_price: currentPrice,
+          pnl,
+          pnl_percentage: pnlPercentage,
+        };
+      })
+    );
 
-      const pnl =
-        (tick.price - h.average_price) * h.quantity;
+    setIndices((prev) =>
+      prev.map((idx) => {
+        const tick = ticks.find((t) =>
+          [idx.name, idx.symbol]
+            .filter(Boolean)
+            .some((value) => value?.toUpperCase() === t.symbol?.toUpperCase())
+        );
 
-      const pnlPercentage =
-        ((tick.price - h.average_price) / h.average_price) * 100;
+        if (!tick) return idx;
 
-      return {
-        ...h,
-        current_price: tick.price,
-        pnl,
-        pnl_percentage: pnlPercentage,
-      };
-    })
-  );
+        return {
+          ...idx,
+          value: tick.price ?? idx.value,
+          change: tick.change ?? idx.change,
+          changePercent: tick.changePercent ?? idx.changePercent,
+        };
+      })
+    );
+  }, [ticks]);
 
-}, [ticks]);
+    useEffect(() => {
+    if (!holdings.length) return;
+
+    const total_invested = holdings.reduce(
+      (sum, h) => sum + (h.average_price * h.quantity),
+      0
+    );
+
+    const current_value = holdings.reduce(
+      (sum, h) => sum + ((h.current_price || 0) * h.quantity),
+      0
+    );
+
+    const total_pnl = current_value - total_invested;
+    const total_pnl_percentage =
+      total_invested > 0 ? (total_pnl / total_invested) * 100 : 0;
+
+    setSummary((prev) => ({
+      ...prev,
+      total_invested,
+      current_value,
+      total_pnl,
+      total_pnl_percentage,
+    }));
+  }, [holdings]);
+
+
 
   const hour = new Date().getHours();
   const greeting =

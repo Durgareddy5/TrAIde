@@ -1,7 +1,7 @@
 // ============================================
 // ProTrade Institutional — Server Entry Point
 // ============================================
-
+import * as kotak from './vendors/kotak-hslib.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -92,6 +92,39 @@ app.get('/health', (req, res) => {
 // ─── API Routes ────────────────────────────
 app.use(env.API_PREFIX, routes);
 
+
+//
+
+app.post("/test-login", async (req, res) => {
+  try {
+    const result = await kotak.login(req.body);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/test-validate", async (req, res) => {
+  try {
+    const result = await kotak.validateMPIN(req.body.mpin);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/test-market", async (req, res) => {
+  try {
+    const data = await kotak.getQuotes("nse_cm|Nifty 50");
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
+//
+
 // ─── 404 handler ───────────────────────────
 app.use((req, res) => {
   res.status(404).json({
@@ -118,12 +151,14 @@ app.use((err, req, res, next) => {
   });
 });
 
+
+// ─── Start Server ──────────────────────────
 // ─── Start Server ──────────────────────────
 const startServer = async () => {
   try {
     await initializeDatabases();
 
-    server.listen(env.PORT, () => {
+    server.listen(env.PORT, async () => {
       console.log('\n═══════════════════════════════════════════════');
       console.log('  🚀 ProTrade Institutional API Server');
       console.log('═══════════════════════════════════════════════');
@@ -132,12 +167,31 @@ const startServer = async () => {
       console.log(`  ✅ Health   : http://localhost:${env.PORT}/health`);
       console.log(`  📦 Env      : ${env.NODE_ENV}`);
       console.log('═══════════════════════════════════════════════\n');
+
+      try {
+        const { default: authService } = await import('./services/kotakAuthService.js');
+        const { hasTotpSecret } = await import('./services/kotakTotpService.js');
+        const { default: marketService } = await import('./services/marketService.js');
+
+        if (hasTotpSecret()) {
+          console.log('🔐 Attempting automatic Kotak login...');
+          await authService.createSession({});
+          await marketService.refreshInstrumentMaster();
+          console.log('✅ Kotak session initialized successfully');
+        } else {
+          console.log('ℹ️ Kotak auto-login skipped: no KOTAK_TOTP_SECRET configured');
+          console.log(`ℹ️ Use POST http://localhost:${env.PORT}${env.API_PREFIX}/kotak/login after signing into the app`);
+        }
+      } catch (kotakError) {
+        console.error('⚠️ Kotak initialization skipped:', kotakError.message);
+      }
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 };
+
 
 startServer();
 

@@ -14,6 +14,9 @@ import {
 import { formatINR, formatPercent, getPnLColor } from '@/utils/formatters';
 import Skeleton from '@/components/ui/Skeleton';
 import Badge from '@/components/ui/Badge';
+import useMarketStore from '@/store/marketStore';
+import useMarketSubscription from '@/hooks/useMarketSubscription';
+
 
 /* ─── mock data ─────────────────────────────── */
 const MOCK_HOLDINGS = [
@@ -155,6 +158,14 @@ const Portfolio = () => {
   const [search,   setSearch]   = useState('');
   const [sortBy,   setSortBy]   = useState('value_desc');
 
+  const ticksByKey = useMarketStore((s) => s.ticksByKey);
+
+  useMarketSubscription({
+    symbols: holdings.map((h) => h.symbol),
+    enabled: !loading,
+  });
+
+
   useEffect(() => {
   fetchHoldings();
 }, []);
@@ -215,6 +226,37 @@ const fetchHoldings = async () => {
     setLoading(false);
   }
 };
+
+  useEffect(() => {
+    if (!holdings.length) return;
+
+    setHoldings((prev) =>
+      prev.map((h) => {
+        const liveTick = Object.values(ticksByKey || {}).find(
+          (tick) => tick.symbol?.toUpperCase() === h.symbol?.toUpperCase()
+        );
+
+        if (!liveTick) return h;
+
+        const current_price = liveTick.price ?? h.current_price;
+        const current_value = h.qty * current_price;
+        const pnl = current_value - h.total_invested;
+        const pnl_pct =
+          h.total_invested > 0 ? (pnl / h.total_invested) * 100 : 0;
+
+        return {
+          ...h,
+          current_price,
+          current_value,
+          pnl,
+          pnl_pct,
+          day_change: liveTick.change ?? h.day_change,
+          day_change_pct: liveTick.changePercent ?? h.day_change_pct,
+        };
+      })
+    );
+  }, [ticksByKey]);
+
 
   /* summary */
   const totalInvested    = holdings.reduce((s, h) => s + h.total_invested, 0);

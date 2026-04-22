@@ -33,18 +33,23 @@ const tradingService = {
   addToWatchlist: (watchlistId, data) => api.post(`/watchlists/${watchlistId}/items`, data),
   removeFromWatchlist: (watchlistId, itemId) => api.delete(`/watchlists/${watchlistId}/items/${itemId}`),
 
-  // Stock Search
-  searchStocks: (query) => api.get('/stocks/search', { params: { q: query } }),
+  // Market search + quotes
+  searchStocks: (query, exchange) =>
+    api.get('/stocks/search', { params: { q: query, ...(exchange ? { exchange } : {}) } }),
+
   getStockQuote: (symbol) => api.get(`/stocks/${symbol}/quote`),
   getStockDetails: (symbol) => api.get(`/stocks/${symbol}`),
 
-  // Market Data
+  // Market snapshots
   getMarketIndices: () => api.get('/market/indices'),
   getMarketStatus: () => api.get('/market/status'),
-  getTopGainers: () => api.get('/market/top-gainers'),
-  getTopLosers: () => api.get('/market/top-losers'),
-  getMostActive: () => api.get('/market/most-active'),
+  getTopGainers: (limit) => api.get('/market/top-gainers', { params: limit ? { limit } : {} }),
+  getTopLosers: (limit) => api.get('/market/top-losers', { params: limit ? { limit } : {} }),
+  getMostActive: (limit) => api.get('/market/most-active', { params: limit ? { limit } : {} }),
 
+  // Instrument master helpers
+  getInstrumentMasterStatus: () => api.get('/market/instrument-master/status'),
+  refreshInstrumentMaster: () => api.post('/market/instrument-master/refresh'),
 
   // Alerts
   getAlerts: () => api.get('/alerts'),

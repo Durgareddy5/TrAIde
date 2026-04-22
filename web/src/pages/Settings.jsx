@@ -1,22 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import {
   User, Mail, Phone, Building2, Lock, Bell,
   Moon, Sun, Globe, Shield, Save, Eye, EyeOff,
-  CreditCard, CheckCircle2, Camera,
+  CheckCircle2, Camera, Radio, RefreshCw, LogOut, KeyRound,
 } from 'lucide-react';
-import useAuthStore  from '@/store/authStore';
+import useAuthStore from '@/store/authStore';
 import useThemeStore from '@/store/themeStore';
-import ThemeToggle   from '@/components/ui/ThemeToggle';
-import toast         from 'react-hot-toast';
+import ThemeToggle from '@/components/ui/ThemeToggle';
+import kotakAdminService from '@/services/kotakAdminService';
+import toast from 'react-hot-toast';
+
 
 const SETTING_TABS = [
-  { key: 'profile',       label: 'Profile',        icon: User    },
-  { key: 'notifications', label: 'Notifications',  icon: Bell    },
-  { key: 'security',      label: 'Security',       icon: Shield  },
-  { key: 'preferences',   label: 'Preferences',    icon: Globe   },
+  { key: 'profile',       label: 'Profile',        icon: User },
+  { key: 'notifications', label: 'Notifications',  icon: Bell },
+  { key: 'security',      label: 'Security',       icon: Shield },
+  { key: 'preferences',   label: 'Preferences',    icon: Globe },
+  { key: 'kotak',         label: 'Kotak API',      icon: Radio },
 ];
+
 
 const SectionTitle = ({ title, subtitle }) => (
   <div className="mb-6">
@@ -52,6 +56,18 @@ const Settings = () => {
   const [saving,    setSaving]    = useState(false);
   const [showPwd,   setShowPwd]   = useState({});
 
+  const [kotakStatus, setKotakStatus] = useState(null);
+  const [kotakLoading, setKotakLoading] = useState(false);
+  const [totp, setTotp] = useState('');
+
+  useEffect(() => {
+    if (activeTab === 'kotak') {
+      loadKotakStatus();
+    }
+  }, [activeTab]);
+
+
+
   const { register, handleSubmit } = useForm({
     defaultValues: {
       first_name:        user?.first_name || '',
@@ -62,6 +78,83 @@ const Settings = () => {
       designation:       user?.designation       || '',
     },
   });
+
+    const loadKotakStatus = async () => {
+    try {
+      const res = await kotakAdminService.getSessionStatus();
+      setKotakStatus(res.data || null);
+    } catch (error) {
+      console.error('Kotak status error:', error);
+      setKotakStatus(null);
+    }
+  };
+
+  const handleKotakLogin = async () => {
+    if (!totp.trim()) {
+      toast.error('Enter the 6-digit TOTP first');
+      return;
+    }
+
+    try {
+      setKotakLoading(true);
+      const res = await kotakAdminService.loginWithTotp(totp.trim(), true);
+      
+      // 🔥 ADD THESE 3 LINES (VERY IMPORTANT)
+      const data = res.data;
+      localStorage.setItem("authToken", data.authToken);
+      localStorage.setItem("sid", data.sid);
+      
+      console.log("✅ Kotak tokens stored:", data);
+      
+      toast.success('Kotak session created successfully');
+      setTotp('');
+      await loadKotakStatus();
+    } catch (error) {
+      toast.error(error.message || 'Kotak login failed');
+    } finally {
+      setKotakLoading(false);
+    }
+  };
+
+  const handleKotakAutoLogin = async () => {
+    try {
+      setKotakLoading(true);
+      await kotakAdminService.autoLogin();
+      toast.success('Kotak auto-login completed');
+      await loadKotakStatus();
+    } catch (error) {
+      toast.error(error.message || 'Kotak auto-login failed');
+    } finally {
+      setKotakLoading(false);
+    }
+  };
+
+  const handleRefreshInstrumentMaster = async () => {
+    try {
+      setKotakLoading(true);
+      await kotakAdminService.refreshInstrumentMaster();
+      toast.success('Instrument master refreshed');
+      await loadKotakStatus();
+    } catch (error) {
+      toast.error(error.message || 'Refresh failed');
+    } finally {
+      setKotakLoading(false);
+    }
+  };
+
+  const handleKotakLogout = async () => {
+    try {
+      setKotakLoading(true);
+      await kotakAdminService.logout();
+      toast.success('Kotak session cleared');
+      await loadKotakStatus();
+    } catch (error) {
+      toast.error(error.message || 'Kotak logout failed');
+    } finally {
+      setKotakLoading(false);
+    }
+  };
+
 
   const onSaveProfile = async (data) => {
     setSaving(true);
@@ -428,6 +521,133 @@ const Settings = () => {
                       {pt}
                     </button>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+         
+            {activeTab === 'kotak' && (
+            <div className="space-y-6">
+              <SectionTitle
+                title="Kotak Trade API"
+                subtitle="Manage Kotak session, TOTP login, and instrument master refresh"
+              />
+
+              <div className="p-5 rounded-xl bg-[var(--bg-tertiary)]
+                              border border-[var(--border-primary)] space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
+                      Session Status
+                    </p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                      {kotakStatus?.ready
+                        ? 'Kotak market session is ready'
+                        : 'No active Kotak session'}
+                    </p>
+                  </div>
+
+                  <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold border
+                    ${kotakStatus?.ready
+                      ? 'bg-[var(--profit-bg)] text-[var(--profit)] border-[var(--profit-border)]'
+                      : 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-primary)]'}`}>
+                    {kotakStatus?.ready ? 'Connected' : 'Disconnected'}
+                  </div>
+                </div>
+
+                {kotakStatus?.session && (
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)]">
+                      <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                        Base URL
+                      </p>
+                      <p className="text-xs text-[var(--text-primary)] break-all">
+                        {kotakStatus.session.baseUrl}
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)]">
+                      <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                        Data Center
+                      </p>
+                      <p className="text-xs text-[var(--text-primary)]">
+                        {kotakStatus.session.dataCenter || '—'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                      Manual TOTP Login
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        value={totp}
+                        onChange={(e) => setTotp(e.target.value)}
+                        placeholder="Enter 6-digit TOTP"
+                        className={inp}
+                      />
+                      <button
+                        onClick={handleKotakLogin}
+                        disabled={kotakLoading}
+                        className="px-4 py-2.5 rounded-xl bg-[var(--accent-primary)]
+                                   text-white text-sm font-semibold disabled:opacity-60
+                                   flex items-center gap-2"
+                      >
+                        <KeyRound size={16} />
+                        Login
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={handleKotakAutoLogin}
+                      disabled={kotakLoading}
+                      className="px-4 py-2.5 rounded-xl bg-purple-600 text-white
+                                 text-sm font-semibold disabled:opacity-60
+                                 flex items-center gap-2"
+                    >
+                      <Radio size={16} />
+                      Auto Login
+                    </button>
+
+                    <button
+                      onClick={handleRefreshInstrumentMaster}
+                      disabled={kotakLoading}
+                      className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)]
+                                 border border-[var(--border-primary)]
+                                 text-sm font-semibold text-[var(--text-primary)]
+                                 disabled:opacity-60 flex items-center gap-2"
+                    >
+                      <RefreshCw size={16} className={kotakLoading ? 'animate-spin' : ''} />
+                      Refresh Scrip Master
+                    </button>
+
+                    <button
+                      onClick={loadKotakStatus}
+                      disabled={kotakLoading}
+                      className="px-4 py-2.5 rounded-xl bg-[var(--bg-card)]
+                                 border border-[var(--border-primary)]
+                                 text-sm font-semibold text-[var(--text-primary)]
+                                 disabled:opacity-60 flex items-center gap-2"
+                    >
+                      <RefreshCw size={16} />
+                      Reload Status
+                    </button>
+
+                    <button
+                      onClick={handleKotakLogout}
+                      disabled={kotakLoading}
+                      className="px-4 py-2.5 rounded-xl bg-[var(--loss)]
+                                 text-white text-sm font-semibold disabled:opacity-60
+                                 flex items-center gap-2"
+                    >
+                      <LogOut size={16} />
+                      Clear Session
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
