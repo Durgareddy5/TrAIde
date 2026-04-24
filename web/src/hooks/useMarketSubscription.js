@@ -13,18 +13,15 @@ const useMarketSubscription = ({
   depthKeys = [],
   enabled = true,
 } = {}) => {
-  const payload = useMemo(
-    () => ({
-      symbols: uniq(symbols),
-      keys: uniq(keys),
-      indices: uniq(indices),
-      depthKeys: uniq(depthKeys),
-    }),
-    [symbols, keys, indices, depthKeys]
-  );
+  const payload = useMemo(() => ({
+    symbols: uniq(symbols),
+    keys: uniq(keys),
+    indices: uniq(indices),
+    depthKeys: uniq(depthKeys),
+  }), [symbols, keys, indices, depthKeys]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) return undefined;
 
     const hasAnything =
       payload.symbols.length ||
@@ -32,12 +29,12 @@ const useMarketSubscription = ({
       payload.indices.length ||
       payload.depthKeys.length;
 
-    if (!hasAnything) return;
+    if (!hasAnything) return undefined;
 
     subscribeMarketData(payload);
 
     return () => {
-      unsubscribeMarketData(payload); 
+      unsubscribeMarketData(payload);
     };
   }, [enabled, payload]);
 };

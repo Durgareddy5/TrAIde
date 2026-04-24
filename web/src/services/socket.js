@@ -1,165 +1,56 @@
-let socketInstance = null;
-let ws = null;
+import { io } from 'socket.io-client';
 
-// ==========================
-// 🔌 INIT SOCKET
-// ==========================
+let socketInstance = null;
+
+const resolveSocketUrl = () => {
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
+  }
+
+  if (import.meta.env.VITE_API_URL) {
+    try {
+      return new URL(import.meta.env.VITE_API_URL, window.location.origin).origin;
+    } catch (_) {
+      return 'http://localhost:5001';
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const { origin, port } = window.location;
+
+    if (port === '3000' || port === '5173') {
+      return 'http://localhost:5001';
+    }
+
+    return origin;
+  }
+
+  return 'http://localhost:5001';
+};
+
 export const getSocket = () => {
   if (socketInstance) return socketInstance;
 
-  socketInstance = new EventTarget();
+  socketInstance = io(resolveSocketUrl(), {
+    transports: ['websocket'],
+    reconnection: true,
+    withCredentials: true,
+    autoConnect: true,
+  });
 
-  const authToken = localStorage.getItem("authToken");
-  const sid = localStorage.getItem("sid");
+  socketInstance.on('connect_error', (error) => {
+    console.error('Socket connection error:', error?.message || error);
+  });
 
-  if (!authToken || !sid) {
-    console.error("❌ Missing authToken or sid");
-    return {
-      on: () => {},
-      off: () => {},
-      emit: () => {},
-    };
-  }
-
-  ws = new window.HSWebSocket("wss://mlhsm.kotaksecurities.com");
-
-  // ==========================
-  // 🔐 CONNECT
-  // ==========================
-  ws.onopen = () => {
-    console.log("✅ Kotak WS Connected");
-
-    ws.send(
-      JSON.stringify({
-        type: "cn",
-        Authorization: authToken,
-        Sid: sid,
-      })
-    );
-  };
-
-  // ==========================
-  // 📊 RECEIVE DATA
-  // ==========================
-  ws.onmessage = (msg) => {
-    let parsed;
-
-    try {
-      parsed = JSON.parse(msg.data);
-    } catch {
-      return;
-    }
-
-    // console.log("📡 RAW WS:", parsed);
-
-    if (parsed[0]?.ltp) {
-      const raw = parsed[0];
-
-      const tick = {
-        key: raw.tk,              // ✅ IMPORTANT (UNIQUE ID)
-        symbol: raw.ts,           // display
-        token: raw.tk,
-        price: parseFloat(raw.ltp),
-        change: parseFloat(raw.cng),
-        changePercent: parseFloat(raw.nc),
-        timestamp: Date.now(),
-      };
-
-      socketInstance.dispatchEvent(
-        new CustomEvent("market:tick", { detail: tick })
-      );
-    }
-  };
-
-  // ==========================
-  // ❌ ERROR
-  // ==========================
-  ws.onerror = (err) => {
-    console.error("❌ WS Error:", err);
-
-    socketInstance.dispatchEvent(
-      new CustomEvent("market:error", { detail: err })
-    );
-  };
-
-  // ==========================
-  // 🔌 CLOSE
-  // ==========================
-  ws.onclose = () => {
-    console.warn("⚠️ WS Disconnected");
-
-    socketInstance.dispatchEvent(
-      new CustomEvent("market:status", { detail: "disconnected" })
-    );
-  };
-
-  // ==========================
-  // 🎧 API
-  // ==========================
-  return {
-    on: (event, cb) =>
-      socketInstance.addEventListener(event, (e) => cb(e.detail)),
-
-    off: (event, cb) =>
-      socketInstance.removeEventListener(event, cb),
-  };
+  return socketInstance;
 };
 
-// ==========================
-// 📡 SUBSCRIBE
-// ==========================
-export const subscribeMarketData = (payload) => {
-  if (!ws || ws.readyState !== 1) {
-    console.warn("⚠️ WS not ready for subscribe");
-    return;
-  }
-
-  const { symbols = [], indices = [] } = payload || {};
-
-  const all = [...symbols, ...indices];
-
-  if (!all.length) return;
-
-  const formatted = all.join("&") + "&";
-
-  ws.send(
-    JSON.stringify({
-      type: "mws",
-      scrips: formatted,
-      channelnum: 1,
-    })
-  );
-
-  console.log("📡 Subscribed:", formatted);
+export const subscribeMarketData = (payload = {}) => {
+  const socket = getSocket();
+  socket.emit('market:subscribe', payload);
 };
 
-// ==========================
-// 🛑 UNSUBSCRIBE
-// ==========================
-export const unsubscribeMarketData = (payload) => {
-  if (!ws || ws.readyState !== 1) return;
-
-  const { symbols = [], indices = [] } = payload || {};
-
-  const all = [...symbols, ...indices];
-
-  if (!all.length) return;
-
-  const formatted = all.join("&") + "&";
-
-  ws.send(
-    JSON.stringify({
-      type: "uws",
-      scrips: formatted,
-      channelnum: 1,
-    })
-  );
-
-  console.log("🛑 Unsubscribed:", formatted);
-};
-
-export default {
-  getSocket,
-  subscribeMarketData,
-  unsubscribeMarketData,
+export const unsubscribeMarketData = (payload = {}) => {
+  const socket = getSocket();
+  socket.emit('market:unsubscribe', payload);
 };

@@ -30,34 +30,34 @@ const useLiveMarketData = () => {
     };
 
     const handleError = (error) => {
-      console.error("Market stream error:", error?.message || error);
+      console.error('Market stream error:', error?.message || error);
     };
 
     const tickListener = (e) => handleTick(e);
     const depthListener = (e) => handleDepth(e);
     const statusListener = (e) => handleStatus(e);
     const errorListener = (e) => handleError(e);
-    
+
     socket.on('market:tick', tickListener);
     socket.on('market:depth', depthListener);
     socket.on('market:status', statusListener);
     socket.on('market:error', errorListener);
 
-   const interval = setInterval(() => {
-     const bufferedTicks = Object.values(tickBuffer.current);
-   
-     if (!bufferedTicks.length) return;
-   
-     updateTicks(bufferedTicks);
-     tickBuffer.current = {};
-     lastFlush.current = Date.now();
-   }, 100);
+    const interval = setInterval(() => {
+      const bufferedTicks = Object.values(tickBuffer.current);
+
+      if (!bufferedTicks.length) return;
+
+      updateTicks(bufferedTicks);
+      tickBuffer.current = {};
+      lastFlush.current = Date.now();
+    }, 100);
 
     return () => {
-    socket.off('market:tick', tickListener);
-    socket.off('market:depth', depthListener);
-    socket.off('market:status', statusListener);
-    socket.off('market:error', errorListener);
+      socket.off('market:tick', tickListener);
+      socket.off('market:depth', depthListener);
+      socket.off('market:status', statusListener);
+      socket.off('market:error', errorListener);
       clearInterval(interval);
     };
   }, [setMarketStatus, updateDepth, updateTicks]);

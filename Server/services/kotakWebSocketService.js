@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-import vm from 'vm';
 import { EventEmitter } from 'events';
 import NodeWebSocket from 'ws';
 
@@ -8,8 +5,9 @@ import authService from './kotakAuthService.js';
 
 const HSM_URL = 'wss://mlhsm.kotaksecurities.com';
 const CHANNEL_NUMBER = 1;
+const RECONNECT_DELAY_MS = 5000;
 
-let runtime = null;
+const emitter = new EventEmitter();
 
 const state = {
   socket: null,
@@ -23,127 +21,7 @@ const state = {
   reconnectTimer: null,
 };
 
-const emitter = new EventEmitter();
-
-const toArrayBuffer = (buffer) => {
-  if (buffer instanceof ArrayBuffer) return buffer;
-  const view = buffer.buffer.slice(
-    buffer.byteOffset,
-    buffer.byteOffset + buffer.byteLength
-  );
-  return view;
-};
-
-const buildBrowserLikeRuntime = () => {
-  if (runtime) return runtime;
-
-  class BrowserWebSocket {
-    constructor(url) {
-      this.url = url;
-      this.binaryType = 'arraybuffer';
-      this.readyState = 0;
-      this.ws = new NodeWebSocket(url);
-
-      this.ws.on('open', () => {
-        this.readyState = 1;
-        if (typeof this.onopen === 'function') {
-          this.onopen();
-        }
-      });
-
-      this.ws.on('message', (data, isBinary) => {
-        let payload = data;
-
-        if (isBinary || Buffer.isBuffer(data)) {
-          payload = toArrayBuffer(Buffer.from(data));
-        } else if (typeof data !== 'string') {
-          payload = String(data);
-        }
-
-        if (typeof this.onmessage === 'function') {
-          this.onmessage({ data: payload });
-        }
-      });
-
-      this.ws.on('close', () => {
-        this.readyState = 3;
-        if (typeof this.onclose === 'function') {
-          this.onclose();
-        }
-      });
-
-      this.ws.on('error', (error) => {
-        if (typeof this.onerror === 'function') {
-          this.onerror(error);
-        }
-      });
-    }
-
-    send(data) {
-      this.ws.send(data);
-    }
-
-    close() {
-      this.ws.close();
-    }
-  }
-
-  const sandbox = {
-    console,
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
-    Uint8Array,
-    ArrayBuffer,
-    DataView,
-    Buffer,
-    WebSocket: BrowserWebSocket,
-    MozWebSocket: BrowserWebSocket,
-    window: {
-      WebSocket: BrowserWebSocket,
-      MozWebSocket: BrowserWebSocket,
-      btoa: (value) => Buffer.from(String(value), 'binary').toString('base64'),
-      atob: (value) => Buffer.from(String(value), 'base64').toString('binary'),
-    },
-    document: {
-      getElementsByTagName: () => [
-        {
-          appendChild: () => {},
-        },
-      ],
-      createElement: () => ({
-        set src(_) {},
-        set type(_) {},
-        onload: null,
-        onreadystatechange: null,
-      }),
-    },
-  };
-
-  sandbox.window.window = sandbox.window;
-  sandbox.window.document = sandbox.document;
-
-  const vendorPath = path.resolve(
-    process.cwd(),
-    'Server/vendors/kotak-hslib.js'
-  );
-  const vendorCode = fs.readFileSync(vendorPath, 'utf8');
-
-  vm.createContext(sandbox);
-  vm.runInContext(vendorCode, sandbox, {
-    filename: 'kotak-hslib.js',
-  });
-
-  runtime = {
-    HSWebSocket: sandbox.HSWebSocket,
-    enableLog: sandbox.enableLog,
-  };
-
-  runtime.enableLog(false);
-
-  return runtime;
-};
+const uniq = (items = []) => [...new Set(items.filter(Boolean))];
 
 const getTickTimestamp = (raw) => {
   const candidate =
@@ -164,17 +42,11 @@ const getTickTimestamp = (raw) => {
   return Date.now();
 };
 
-
-const getDisplaySymbol = (raw) => {
-  return raw.ts || raw.name || raw.tk || '';
-};
-
-
-
+const getDisplaySymbol = (raw) => raw.ts || raw.name || raw.tk || '';
 
 const normalizeScripTick = (raw) => ({
   feedType: 'scrip',
-  key: `${raw.e}|${raw.tk}`,
+  key: `${raw.e || ''}|${raw.tk || ''}`,
   exchangeSegment: raw.e || '',
   exchange: raw.e || '',
   symbol: raw.ts || raw.tk || '',
@@ -203,10 +75,9 @@ const normalizeScripTick = (raw) => ({
   raw,
 });
 
-
 const normalizeIndexTick = (raw) => ({
   feedType: 'index',
-  key: `${raw.e}|${raw.tk}`,
+  key: `${raw.e || ''}|${raw.tk || ''}`,
   exchangeSegment: raw.e || '',
   exchange: raw.e || '',
   symbol: raw.ts || raw.tk || '',
@@ -227,7 +98,7 @@ const normalizeIndexTick = (raw) => ({
 });
 
 const normalizeDepth = (raw) => ({
-  key: `${raw.e}|${raw.tk}`,
+  key: `${raw.e || ''}|${raw.tk || ''}`,
   exchangeSegment: raw.e || '',
   exchange: raw.e || '',
   symbol: raw.ts || raw.tk || '',
@@ -253,11 +124,31 @@ const normalizeDepth = (raw) => ({
   raw,
 });
 
+const emitStatus = (status) => {
+  emitter.emit('status', {
+    ...status,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+const emitError = (error) => {
+  emitter.emit('error', {
+    ...error,
+    timestamp: new Date().toISOString(),
+  });
+};
+
 const parseDecodedMessage = (payload) => {
+  const asString =
+    typeof payload === 'string'
+      ? payload
+      : Buffer.isBuffer(payload)
+        ? payload.toString('utf8')
+        : String(payload ?? '');
+
   try {
-    const parsed = JSON.parse(payload);
-    if (Array.isArray(parsed)) return parsed;
-    return [parsed];
+    const parsed = JSON.parse(asString);
+    return Array.isArray(parsed) ? parsed : [parsed];
   } catch {
     return [];
   }
@@ -267,7 +158,7 @@ const classifyAndEmit = (message) => {
   if (!message || typeof message !== 'object') return;
 
   if (message.stat === 'NotOk' || message.stat === 'Not_Ok') {
-    emitter.emit('error', {
+    emitError({
       type: 'provider_error',
       message: message.msg || message.emsg || 'Kotak websocket error',
       raw: message,
@@ -276,12 +167,11 @@ const classifyAndEmit = (message) => {
   }
 
   if (message.type === 'cn') {
-    emitter.emit('status', {
+    emitStatus({
       connected: true,
       provider: 'kotak',
       status: 'connected',
       message: 'Kotak market feed connected',
-      timestamp: new Date().toISOString(),
     });
     return;
   }
@@ -302,7 +192,7 @@ const classifyAndEmit = (message) => {
 };
 
 const send = (payload) => {
-  if (!state.socket || !state.connected) return;
+  if (!state.socket || state.socket.readyState !== NodeWebSocket.OPEN) return;
   state.socket.send(JSON.stringify(payload));
 };
 
@@ -332,6 +222,14 @@ const replaySubscriptions = () => {
   }
 };
 
+const ensureSession = async () => {
+  if (authService.isSessionReady()) {
+    return authService.requireSession();
+  }
+
+  return authService.createSession({});
+};
+
 const scheduleReconnect = () => {
   if (state.reconnectTimer) return;
 
@@ -340,71 +238,85 @@ const scheduleReconnect = () => {
     try {
       await connect();
     } catch (error) {
-      emitter.emit('error', {
+      emitError({
         type: 'reconnect_failed',
         message: error.message,
       });
     }
-  }, 5000);
+  }, RECONNECT_DELAY_MS);
 };
 
 const connect = async () => {
   if (state.connected || state.connecting) return;
-  const session = authService.requireSession();
-  const { HSWebSocket } = buildBrowserLikeRuntime();
 
+  const session = await ensureSession();
   state.connecting = true;
 
   await new Promise((resolve, reject) => {
-    const socket = new HSWebSocket(HSM_URL);
+    const socket = new NodeWebSocket(HSM_URL);
+    let settled = false;
 
-    socket.onopen = () => {
+    const finishResolve = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+
+    const finishReject = (error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    };
+
+    socket.on('open', () => {
       state.socket = socket;
       state.connected = true;
       state.connecting = false;
 
       send({
         type: 'cn',
-        Authorization: session.tradeToken,
-        Sid: session.tradeSid,
+        Authorization: session.tradeToken || session.authToken,
+        Sid: session.tradeSid || session.sid,
       });
 
       replaySubscriptions();
-      resolve();
-    };
+      finishResolve();
+    });
 
-    socket.onmessage = (payload) => {
+    socket.on('message', (payload) => {
+      console.log('RAW KOTAK MESSAGE:', payload);
       const messages = parseDecodedMessage(payload);
+      console.log('PARSED KOTAK MESSAGE:', messages);
       messages.forEach(classifyAndEmit);
-    };
+    });
 
-    socket.onclose = () => {
+
+    socket.on('close', () => {
       state.connected = false;
       state.connecting = false;
       state.socket = null;
 
-      emitter.emit('status', {
+      emitStatus({
         connected: false,
         provider: 'kotak',
         status: 'disconnected',
         message: 'Kotak market feed disconnected',
-        timestamp: new Date().toISOString(),
       });
 
       scheduleReconnect();
-    };
+    });
 
-    socket.onerror = (error) => {
+    socket.on('error', (error) => {
       state.connected = false;
       state.connecting = false;
 
-      emitter.emit('error', {
+      emitError({
         type: 'socket_error',
         message: error?.message || 'Kotak websocket error',
       });
 
-      reject(error);
-    };
+      finishReject(error);
+    });
   });
 };
 
@@ -422,8 +334,6 @@ const disconnect = () => {
   state.connected = false;
   state.connecting = false;
 };
-
-const uniq = (items = []) => [...new Set(items.filter(Boolean))];
 
 const subscribeScrips = async (keys = []) => {
   uniq(keys).forEach((key) => state.subscriptions.scrips.add(key));

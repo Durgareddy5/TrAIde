@@ -247,6 +247,11 @@ const Markets = () => {
   const [activeSection, setActiveSection] = useState('indices');
   const [search, setSearch]  = useState('');
   const ticks = useMarketStore((s) => s.ticks);
+  const [indicesList, setIndicesList] = useState([]);
+  const [gainersList, setGainersList] = useState([]);
+  const [losersList, setLosersList] = useState([]);
+  const [activeList, setActiveList] = useState([]);
+
 
     useMarketSubscription({
     symbols: [
@@ -266,11 +271,7 @@ const Markets = () => {
       'AXISBANK',
       'HCLTECH',
     ],
-    indices: [
-      'nse_cm|Nifty 50',
-      'nse_cm|Nifty Bank',
-      'bse_cm|SENSEX',
-    ],
+    indices: (indicesList.length ? indicesList : INDICES).map((idx) => idx.name || idx.symbol),
   });
 
 
@@ -278,8 +279,10 @@ const Markets = () => {
   console.log('LIVE DATA:', liveData);
   const marketArray = Object.values(liveData);
 
-    const mergedIndices = INDICES.map((idx) => {
-    const candidates = [
+    const baseIndices = indicesList.length ? indicesList : INDICES;
+
+    const mergedIndices = baseIndices.map((idx) => {
+      const candidates = [
       liveData[idx.symbol],
       liveData[idx.symbol?.replaceAll('_', ' ')],
       liveData[idx.name?.toUpperCase()],
@@ -346,6 +349,56 @@ const Markets = () => {
         const fetchedGainers = gainersRes?.data || [];
         const fetchedLosers = losersRes?.data || [];
         const fetchedActive = activeRes?.data || [];
+
+
+        setIndicesList(
+          fetchedIndices.map((idx) => ({
+            symbol: (idx.symbol || idx.name || '').toUpperCase().replace(/\s+/g, '_'),
+            name: idx.name || idx.symbol || '',
+            value: idx.current_value ?? 0,
+            change: idx.change ?? 0,
+            pct: idx.change_percent ?? 0,
+            open: idx.open ?? 0,
+            high: idx.high ?? 0,
+            low: idx.low ?? 0,
+            vol: idx.volume ?? '—',
+            exchange: idx.exchange || '',
+          }))
+        );
+        
+        setGainersList(
+          fetchedGainers.map((item) => ({
+            symbol: item.symbol,
+            name: item.name || item.symbol,
+            price: item.price ?? 0,
+            change: item.change ?? 0,
+            pct: item.change_percent ?? item.pct ?? 0,
+            vol: item.volume ?? '—',
+          }))
+        );
+        
+        setLosersList(
+          fetchedLosers.map((item) => ({
+            symbol: item.symbol,
+            name: item.name || item.symbol,
+            price: item.price ?? 0,
+            change: item.change ?? 0,
+            pct: item.change_percent ?? item.pct ?? 0,
+            vol: item.volume ?? '—',
+          }))
+        );
+        
+        setActiveList(
+          fetchedActive.map((item) => ({
+            symbol: item.symbol,
+            name: item.name || item.symbol,
+            price: item.price ?? 0,
+            change: item.change ?? 0,
+            pct: item.change_percent ?? item.pct ?? 0,
+            vol: item.volume ?? '—',
+          }))
+        );
+
 
         if (fetchedIndices.length) {
           setLiveData((prev) => {
@@ -438,6 +491,24 @@ const Markets = () => {
     { key:'active',   label:'Most Active',  icon:Flame       },
     { key:'heatmap',  label:'Heat Map',     icon:Activity    },
   ];
+
+  const applyLiveToStock = (stock) => {
+  const live =
+    liveData[stock.symbol] ||
+    liveData[stock.symbol?.toUpperCase()] ||
+    null;
+
+  if (!live) return stock;
+
+  return {
+    ...stock,
+    price: live.price ?? stock.price,
+    change: live.change ?? stock.change,
+    pct: live.changePercent ?? live.pct ?? stock.pct,
+    vol: live.volume ?? stock.vol,
+  };
+};
+
   
   
   return (
@@ -623,7 +694,13 @@ const Markets = () => {
                       </tr>
                     ))
                   : (() => {
-                  let sorted = [...Object.values(liveData)];
+                   let sorted =
+                    activeSection === 'gainers'
+                      ? [...(gainersList.length ? gainersList : GAINERS)]
+                      : activeSection === 'losers'
+                        ? [...(losersList.length ? losersList : LOSERS)]
+                        : [...(activeList.length ? activeList : ACTIVE)];
+
                 
                   if (activeSection === 'gainers') {
                     sorted.sort((a, b) => b.pct - a.pct);
@@ -632,6 +709,8 @@ const Markets = () => {
                   } else {
                     sorted.sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
                   }
+
+
                   
                   
                   return sorted
@@ -644,14 +723,7 @@ const Markets = () => {
                     .map((s, i) => (
                       <MoverRow
                         key={s.symbol}
-                        stock={{
-                          symbol: s.symbol,
-                          name: s.symbol,
-                          price: s.price,
-                          change: s.change,
-                          pct: s.pct,
-                          vol: 'LIVE',
-                        }}
+                        stock={applyLiveToStock(s)}
                         rank={i}
                         onClick={() => navigate(`/stock/${s.symbol}`)}
                       />

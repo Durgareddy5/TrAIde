@@ -6,7 +6,27 @@ const DEFAULT_INDEXES = [
   { exchangeSegment: 'nse_cm', query: 'Nifty 50', symbol: 'NIFTY 50' },
   { exchangeSegment: 'nse_cm', query: 'Nifty Bank', symbol: 'NIFTY BANK' },
   { exchangeSegment: 'bse_cm', query: 'SENSEX', symbol: 'SENSEX' },
+  { exchangeSegment: 'bse_cm', query: 'BANKEX', symbol: 'BANKEX' },
+  { exchangeSegment: 'bse_cm', query: 'SENSEX50', symbol: 'SENSEX50' },
+
+  { exchangeSegment: 'nse_cm', query: 'Nifty IT', symbol: 'NIFTY IT' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Pharma', symbol: 'NIFTY PHARMA' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Auto', symbol: 'NIFTY AUTO' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty FMCG', symbol: 'NIFTY FMCG' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Metal', symbol: 'NIFTY METAL' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Realty', symbol: 'NIFTY REALTY' },
+  { exchangeSegment: 'nse_cm', query: 'India VIX', symbol: 'INDIA VIX' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty PSU Bank', symbol: 'NIFTY PSU BANK' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Midcap 50', symbol: 'NIFTY MIDCAP 50' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Next 50', symbol: 'NIFTY NEXT 50' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Smallcap 100', symbol: 'NIFTY SMALLCAP 100' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Financial Services', symbol: 'NIFTY FIN SERVICE' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Healthcare', symbol: 'NIFTY HEALTHCARE' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Consumer Durables', symbol: 'NIFTY CONSUMER DURABLES' },
+  { exchangeSegment: 'nse_cm', query: 'Nifty Oil & Gas', symbol: 'NIFTY OIL & GAS' },
 ];
+
+
 
 const getStatus = () => getMarketStatus();
 
@@ -32,6 +52,7 @@ const getAllIndices = async () => {
 
   return quotes.map((quote) => ({
     symbol: quote.display_symbol || quote.exchange_token,
+    name: quote.display_symbol || quote.exchange_token,
     exchange: quote.exchange,
     current_value: Number(quote.ltp || 0),
     change: Number(quote.change || 0),
@@ -45,6 +66,8 @@ const getAllIndices = async () => {
     last_updated: toIsoTime(quote),
   }));
 };
+
+
 
 const searchStocks = async (query, limit = 15, exchangeSegment) => {
   const results = await instrumentService.searchInstruments({

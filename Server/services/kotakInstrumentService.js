@@ -312,6 +312,49 @@ const findByExchangeIdentifier = async ({ exchangeSegment, exchangeIdentifier })
   );
 };
 
+const getAllIndexInstruments = async (limit = 200) => {
+  await ensureScripMasterLoaded();
+
+  return state.instruments
+    .filter((instrument) => {
+      const raw = instrument.raw || {};
+
+      const exchangeOk = ['nse_cm', 'bse_cm'].includes(instrument.exchangeSegment);
+      const hasName = Boolean(
+        instrument.displaySymbol ||
+        instrument.tradingSymbol ||
+        instrument.instrumentName
+      );
+
+      // Real indices usually do not carry ISIN / equity-style exchange metadata
+      const looksLikeIndex =
+        !raw.pISIN &&
+        !raw.pExchange &&
+        !raw.pGroup &&
+        instrument.lotSize === 1;
+
+      // Avoid ETF/INAV-like symbols
+      const nameBlob = [
+        instrument.symbol,
+        instrument.displaySymbol,
+        instrument.tradingSymbol,
+        instrument.instrumentName,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toUpperCase();
+
+      const excludeNonIndex =
+        !nameBlob.includes('INAV') &&
+        !nameBlob.includes('ETF') &&
+        !nameBlob.includes('FUND');
+
+      return exchangeOk && hasName && looksLikeIndex && excludeNonIndex;
+    })
+    .slice(0, limit);
+};
+
+
 const findByAnySymbol = async (symbol) => {
   await ensureScripMasterLoaded();
 
@@ -358,6 +401,7 @@ export {
   findByAnySymbol,
   getTrackedUniverse,
   getInstrumentCount,
+  getAllIndexInstruments,
 };
 
 export default {
@@ -369,4 +413,6 @@ export default {
   findByAnySymbol,
   getTrackedUniverse,
   getInstrumentCount,
+  getAllIndexInstruments,
 };
+

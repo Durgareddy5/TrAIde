@@ -24,20 +24,34 @@ const ensureClientState = (socketId) => {
 const toKey = (exchangeSegment, exchangeIdentifier) =>
   `${exchangeSegment}|${exchangeIdentifier}`;
 
-const resolveSymbolKeys = async (symbols = []) => {
+const uniq = (items = []) => [...new Set(items.filter(Boolean))];
+
+const isResolvedKey = (value = '') =>
+  typeof value === 'string' && /^[a-z_]+\|\d+$/i.test(value);
+
+const resolveItemsToKeys = async (items = []) => {
   const keys = [];
 
-  for (const symbol of symbols) {
-    const instrument = await instrumentService.findByAnySymbol(symbol);
+  for (const item of uniq(items)) {
+    if (!item) continue;
+
+    if (isResolvedKey(item)) {
+      keys.push(item);
+      continue;
+    }
+
+    const normalized = String(item).includes('|')
+      ? String(item).split('|')[1].trim()
+      : String(item).trim();
+
+    const instrument = await instrumentService.findByAnySymbol(normalized);
     if (instrument) {
       keys.push(toKey(instrument.exchangeSegment, instrument.exchangeIdentifier));
     }
   }
 
-  return keys;
+  return uniq(keys);
 };
-
-const uniq = (items = []) => [...new Set(items.filter(Boolean))];
 
 const recomputeUnion = (bucket) => {
   const out = new Set();
@@ -94,10 +108,12 @@ const wireBridge = () => {
 const subscribeForSocket = async (socket, payload = {}) => {
   const state = ensureClientState(socket.id);
 
-  const symbolKeys = await resolveSymbolKeys(payload.symbols || []);
-  const scripKeys = uniq([...(payload.keys || []), ...symbolKeys]);
-  const indexKeys = uniq(payload.indices || []);
-  const depthKeys = uniq(payload.depthKeys || []);
+  const symbolKeys = await resolveItemsToKeys(payload.symbols || []);
+  const directKeys = await resolveItemsToKeys(payload.keys || []);
+  const indexKeys = await resolveItemsToKeys(payload.indices || []);
+  const depthKeys = await resolveItemsToKeys(payload.depthKeys || []);
+
+  const scripKeys = uniq([...directKeys, ...symbolKeys]);
 
   scripKeys.forEach((key) => state.scrips.add(key));
   indexKeys.forEach((key) => state.indices.add(key));
@@ -115,10 +131,12 @@ const subscribeForSocket = async (socket, payload = {}) => {
 const unsubscribeForSocket = async (socket, payload = {}) => {
   const state = ensureClientState(socket.id);
 
-  const symbolKeys = await resolveSymbolKeys(payload.symbols || []);
-  const scripKeys = uniq([...(payload.keys || []), ...symbolKeys]);
-  const indexKeys = uniq(payload.indices || []);
-  const depthKeys = uniq(payload.depthKeys || []);
+  const symbolKeys = await resolveItemsToKeys(payload.symbols || []);
+  const directKeys = await resolveItemsToKeys(payload.keys || []);
+  const indexKeys = await resolveItemsToKeys(payload.indices || []);
+  const depthKeys = await resolveItemsToKeys(payload.depthKeys || []);
+
+  const scripKeys = uniq([...directKeys, ...symbolKeys]);
 
   scripKeys.forEach((key) => state.scrips.delete(key));
   indexKeys.forEach((key) => state.indices.delete(key));

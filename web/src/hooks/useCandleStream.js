@@ -4,7 +4,6 @@ import { OHLCAggregator } from '@/utils/ohlcAggregator';
 
 const useCandleStream = (marketKey) => {
   const tick = useMarketStore((s) => (marketKey ? s.ticksByKey[marketKey] : null));
-  const candlesByKey = useMarketStore((s) => s.candlesByKey);
   const setCandlesForKey = useMarketStore((s) => s.setCandlesForKey);
 
   const aggregatorRef = useRef(null);
@@ -14,8 +13,8 @@ const useCandleStream = (marketKey) => {
     if (!marketKey) return;
 
     aggregatorRef.current = new OHLCAggregator(60000);
-    candlesRef.current = candlesByKey[marketKey] || [];
-  }, [marketKey, candlesByKey]);
+    candlesRef.current = useMarketStore.getState().candlesByKey[marketKey] || [];
+  }, [marketKey]);
 
   useEffect(() => {
     if (!marketKey || !tick || !aggregatorRef.current) return;
@@ -26,19 +25,29 @@ const useCandleStream = (marketKey) => {
     });
 
     if (result.type === 'new') {
-      candlesRef.current.push(result.candle);
+      candlesRef.current = [...candlesRef.current, result.candle];
     }
 
     if (result.type === 'close') {
-      candlesRef.current[candlesRef.current.length - 1] = result.closed;
-      candlesRef.current.push(result.new);
+      const next = [...candlesRef.current];
+      if (next.length > 0) {
+        next[next.length - 1] = result.closed;
+      }
+      next.push(result.new);
+      candlesRef.current = next;
     }
 
     if (result.type === 'update') {
-      candlesRef.current[candlesRef.current.length - 1] = result.candle;
+      const next = [...candlesRef.current];
+      if (next.length === 0) {
+        next.push(result.candle);
+      } else {
+        next[next.length - 1] = result.candle;
+      }
+      candlesRef.current = next;
     }
 
-    setCandlesForKey(marketKey, [...candlesRef.current]);
+    setCandlesForKey(marketKey, candlesRef.current);
   }, [marketKey, tick, setCandlesForKey]);
 };
 
